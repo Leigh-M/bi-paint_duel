@@ -27,10 +27,10 @@ let app = new Application({
 //Add the canvas that Pixi automatically created for you to the HTML document
 document.body.appendChild(app.view);
 loader
-  // .add("images/ .json")
+  .add("images/bi-paint-textures.json")
   .load(setup);
 
-let state, rafPlane, redBarron, gameScene, gameOverScene, id;
+let state, rafPlane, redBarron, gameScene, gameOverScene, id, sky, largeCloud, flatCloud, flatcloudDistant, hills, hut, RAFPaintBall, RedBarronPaintBall;
 
 function setup() {
   state = play;

@@ -1,0 +1,132 @@
+{"frames": {
+
+"Backgrd.png":
+{
+	"frame": {"x":0,"y":408,"w":1202,"h":796},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":1202,"h":796},
+	"sourceSize": {"w":1202,"h":796}
+},
+"Balloon.png":
+{
+	"frame": {"x":1243,"y":0,"w":59,"h":105},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":59,"h":105},
+	"sourceSize": {"w":59,"h":105}
+},
+"BIGCloud.png":
+{
+	"frame": {"x":0,"y":128,"w":238,"h":145},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":238,"h":145},
+	"sourceSize": {"w":238,"h":145}
+},
+"Bullet.png":
+{
+	"frame": {"x":0,"y":0,"w":20,"h":19},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":20,"h":19},
+	"sourceSize": {"w":20,"h":19}
+},
+"favicon.png":
+{
+	"frame": {"x":911,"y":0,"w":83,"h":58},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":83,"h":58},
+	"sourceSize": {"w":83,"h":58}
+},
+"FlatCloud.png":
+{
+	"frame": {"x":279,"y":0,"w":383,"h":27},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":383,"h":27},
+	"sourceSize": {"w":383,"h":27}
+},
+"FlatCloud_distant.png":
+{
+	"frame": {"x":20,"y":0,"w":259,"h":21},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":259,"h":21},
+	"sourceSize": {"w":259,"h":21}
+},
+"Hills.png":
+{
+	"frame": {"x":238,"y":128,"w":1202,"h":280},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":1202,"h":280},
+	"sourceSize": {"w":1202,"h":280}
+},
+"House.png":
+{
+	"frame": {"x":1302,"y":0,"w":163,"h":128},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":163,"h":128},
+	"sourceSize": {"w":163,"h":128}
+},
+"RAF_Plane01 flipped.png":
+{
+	"frame": {"x":745,"y":0,"w":83,"h":58},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":83,"h":58},
+	"sourceSize": {"w":83,"h":58}
+},
+"RAF_Plane01 sized.png":
+{
+	"frame": {"x":662,"y":0,"w":83,"h":58},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":83,"h":58},
+	"sourceSize": {"w":83,"h":58}
+},
+"RAF_Plane02_flipped.png":
+{
+	"frame": {"x":1160,"y":0,"w":83,"h":58},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":83,"h":58},
+	"sourceSize": {"w":83,"h":58}
+},
+"RAF_Plane02sized.png":
+{
+	"frame": {"x":828,"y":0,"w":83,"h":58},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":83,"h":58},
+	"sourceSize": {"w":83,"h":58}
+},
+"RedBarren flipped.png":
+{
+	"frame": {"x":994,"y":0,"w":83,"h":58},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":83,"h":58},
+	"sourceSize": {"w":83,"h":58}
+},
+"RedBarren_sized.png":
+{
+	"frame": {"x":1077,"y":0,"w":83,"h":58},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":83,"h":58},
+	"sourceSize": {"w":83,"h":58}
+}},
+"meta": {
+	"app": "https://www.codeandweb.com/texturepacker",
+	"version": "1.0",
+	"image": "bi-paint-textures.png",
+	"format": "RGBA8888",
+	"size": {"w":1465,"h":1204},
+	"scale": "1",
+	"smartupdate": "$TexturePacker:SmartUpdate:117f33e12a8fe17e72ad744eebeb7687:696aa7d5d966a726c1b45b645da902c4:480a24e0002bdb0b9a6536d92601b86a$"
+}
+}
