@@ -30,7 +30,7 @@ loader
   .add("images/bi-paint-textures.json")
   .load(setup);
 
-let state, rafPlane, redBarron, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, hut, RAFPaintBall, redBarronPaintBall;
+let state, rafPlane, redBarron, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, RAFPaintBall, redBarronPaintBall;
 
 function setup() {
   gameScene = new Container();
@@ -55,6 +55,9 @@ function setup() {
   hills = new Sprite(id["Hills.png"]);
   hills.y = 796 - hills.height;
 
+  nearHill = new Sprite(id["Front_Hill.png"]);
+  nearHill.y = gameScene.height - nearHill.height;
+
   hut = new Sprite(id["House.png"]);
   hut.x = gameScene.width/2 - hut.width/2;
   hut.y = gameScene.height - hut.height;
@@ -74,7 +77,7 @@ function setup() {
   flatCloudDistant.x = 800;
   flatCloudDistant.y = 580;
 
-  gameScene.addChild(flatCloudDistant, hills, flatCloud, balloon, hut, RAFPlane, redBarron, largeCloud1, largeCloud2);
+  gameScene.addChild(flatCloudDistant, hills, flatCloud, nearHill, balloon, hut, RAFPlane, redBarron, largeCloud1, largeCloud2);
 
   state = play;
  

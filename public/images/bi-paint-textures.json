@@ -2,7 +2,7 @@
 
 "Backgrd.png":
 {
-	"frame": {"x":0,"y":408,"w":1202,"h":796},
+	"frame": {"x":453,"y":408,"w":1202,"h":796},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":1202,"h":796},
@@ -56,6 +56,14 @@
 	"spriteSourceSize": {"x":0,"y":0,"w":259,"h":21},
 	"sourceSize": {"w":259,"h":21}
 },
+"Front_Hill.png":
+{
+	"frame": {"x":0,"y":408,"w":453,"h":280},
+	"rotated": false,
+	"trimmed": false,
+	"spriteSourceSize": {"x":0,"y":0,"w":453,"h":280},
+	"sourceSize": {"w":453,"h":280}
+},
 "Hills.png":
 {
 	"frame": {"x":238,"y":128,"w":1202,"h":280},
@@ -74,7 +82,7 @@
 },
 "RAF_Plane01 flipped.png":
 {
-	"frame": {"x":745,"y":0,"w":83,"h":58},
+	"frame": {"x":662,"y":0,"w":83,"h":58},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":83,"h":58},
@@ -82,7 +90,7 @@
 },
 "RAF_Plane01 sized.png":
 {
-	"frame": {"x":662,"y":0,"w":83,"h":58},
+	"frame": {"x":1160,"y":0,"w":83,"h":58},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":83,"h":58},
@@ -90,7 +98,7 @@
 },
 "RAF_Plane02_flipped.png":
 {
-	"frame": {"x":1160,"y":0,"w":83,"h":58},
+	"frame": {"x":745,"y":0,"w":83,"h":58},
 	"rotated": false,
 	"trimmed": false,
 	"spriteSourceSize": {"x":0,"y":0,"w":83,"h":58},
@@ -125,8 +133,8 @@
 	"version": "1.0",
 	"image": "bi-paint-textures.png",
 	"format": "RGBA8888",
-	"size": {"w":1465,"h":1204},
+	"size": {"w":1655,"h":1204},
 	"scale": "1",
-	"smartupdate": "$TexturePacker:SmartUpdate:117f33e12a8fe17e72ad744eebeb7687:696aa7d5d966a726c1b45b645da902c4:480a24e0002bdb0b9a6536d92601b86a$"
+	"smartupdate": "$TexturePacker:SmartUpdate:1bd2172e5335d7a20b29a3cc4a3dbe84:3ee4813c32ea2d3fc9753bee6092a817:02ab132358d6d8b512e80119463a8329$"
 }
 }
