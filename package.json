@@ -1,0 +1,31 @@
+{
+  "name": "bi-paint_duel",
+  "version": "1.0.0",
+  "description": "biplane duel stylie tribute HTML5 game written in PixiJS",
+  "main": "index.html",
+  "scripts": {
+    "test": "test",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Leigh-M/bi-paint_duel.git"
+  },
+  "keywords": [
+    "biplane",
+    "duel",
+    "html5",
+    "game",
+    "pixi",
+    "pixijs"
+  ],
+  "author": "Leigh Mathieson",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Leigh-M/bi-paint_duel/issues"
+  },
+  "homepage": "https://github.com/Leigh-M/bi-paint_duel#readme",
+  "dependencies": {
+    "express": "^4.16.4"
+  }
+}
