@@ -15,7 +15,7 @@ let Application = PIXI.Application,
     Sprite = PIXI.Sprite,
     Text = PIXI.Text,
     TextStyle = PIXI.TextStyle;
-//Create a Pixi Application
+//Create app
 let app = new Application({ 
     width: 2102, 
     height: 796,                       
@@ -24,13 +24,13 @@ let app = new Application({
     resolution: 1
   }
 );
-//Add the canvas that Pixi automatically created for you to the HTML document
+//Add the canvas
 document.body.appendChild(app.view);
 loader
   .add("images/bi-paint-textures.json")
   .load(setup);
 
-let state, rafPlane, redBarron, balloon, gameScene, gameOverScene, id, sky, largeCloud, flatCloud, flatCloudDistant, hills, hut, RAFPaintBall, redBarronPaintBall;
+let state, rafPlane, redBarron, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, hut, RAFPaintBall, redBarronPaintBall;
 
 function setup() {
   gameScene = new Container();
@@ -38,16 +38,43 @@ function setup() {
   id = resources["images/bi-paint-textures.json"].textures;
 
   sky = new Sprite(id["Backgrd.png"]);
-  balloon = new Sprite(id["Balloon.png"]);
-  largeCloud = new Sprite(id["BIGCloud.png"]);
-  hills = new Sprite(id["Hills.png"]);
-  hut = new Sprite(id["House.png"]);
-  RAFPlane = new Sprite(id["RAF_Plane02sized.png"]);
-  redBarron = new Sprite(id["RedBarren flipped.png"]);
-  flatCloud = new Sprite(id["FlatCloud.png"]);
-  flatCloudDistant = new Sprite(id["FlatCloud_distant.png"]);
+  gameScene.addChild(sky);
 
-  gameScene.addChild(sky, flatCloudDistant, hills, hut, largeCloud, RAFPlane, redBarron);
+  balloon = new Sprite(id["Balloon.png"]);
+  balloon.x = 850;
+  balloon.y = 550;
+
+  largeCloud1 = new Sprite(id["BIGCloud.png"]);
+  largeCloud1.x = 600;
+  largeCloud1.y = 220;
+
+  largeCloud2 = new Sprite(id["BIGCloud.png"]);
+  largeCloud2.x = 260;
+  largeCloud2.y = 180;
+
+  hills = new Sprite(id["Hills.png"]);
+  hills.y = 796 - hills.height;
+
+  hut = new Sprite(id["House.png"]);
+  hut.x = gameScene.width/2 - hut.width/2;
+  hut.y = gameScene.height - hut.height;
+
+  RAFPlane = new Sprite(id["RAF_Plane02sized.png"]);
+  RAFPlane.y = gameScene.height - RAFPlane.height;
+
+  redBarron = new Sprite(id["RedBarren flipped.png"]);
+  redBarron.x = gameScene.width - redBarron.width;
+  redBarron.y = gameScene.height - redBarron.height;
+
+  flatCloud = new Sprite(id["FlatCloud.png"]);
+  flatCloud.x = 160;
+  flatCloud.y = 600;
+
+  flatCloudDistant = new Sprite(id["FlatCloud_distant.png"]);
+  flatCloudDistant.x = 800;
+  flatCloudDistant.y = 580;
+
+  gameScene.addChild(flatCloudDistant, hills, flatCloud, balloon, hut, RAFPlane, redBarron, largeCloud1, largeCloud2);
 
   state = play;
  
