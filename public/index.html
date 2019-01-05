@@ -5,92 +5,218 @@
 <body>
 <script src="./pixi/pixi.min.js"></script>
 <script>
-//Aliases
-let Application = PIXI.Application,
-    Container = PIXI.Container,
-    loader = PIXI.loader,
-    resources = PIXI.loader.resources,
-    Graphics = PIXI.Graphics,
-    TextureCache = PIXI.utils.TextureCache,
-    Sprite = PIXI.Sprite,
-    Text = PIXI.Text,
-    TextStyle = PIXI.TextStyle;
-//Create app
-let app = new Application({ 
-    width: 2102, 
-    height: 796,                       
-    antialiasing: true, 
-    transparent: false, 
-    resolution: 1
+  //Aliases
+  let Application = PIXI.Application,
+      Container = PIXI.Container,
+      loader = PIXI.loader,
+      resources = PIXI.loader.resources,
+      Graphics = PIXI.Graphics,
+      TextureCache = PIXI.utils.TextureCache,
+      Sprite = PIXI.Sprite,
+      Text = PIXI.Text,
+      TextStyle = PIXI.TextStyle;
+
+  //Create app
+  let app = new Application({ 
+      width: 2102, 
+      height: 796,                       
+      antialiasing: true, 
+      transparent: false, 
+      resolution: 1
+    }
+  );
+
+  //Add the canvas
+  document.body.appendChild(app.view);
+  loader
+    .add("images/bi-paint-textures.json")
+    .load(setup);
+
+  let state, rafPlane, redBarron, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, rafPaintBall, redBarronPaintBall, keyState;
+  
+  function setup() {
+    gameScene = new Container();
+    app.stage.addChild(gameScene);
+    id = resources["images/bi-paint-textures.json"].textures;
+  
+    // set up assets
+    sky = new Sprite(id["Backgrd.png"]);
+    gameScene.addChild(sky);
+
+    balloon = new Sprite(id["Balloon.png"]);
+    balloon.x = 850;
+    balloon.y = 550;
+  
+    largeCloud1 = new Sprite(id["BIGCloud.png"]);
+    largeCloud1.x = 600;
+    largeCloud1.y = 220;
+  
+    largeCloud2 = new Sprite(id["BIGCloud.png"]);
+    largeCloud2.x = 260;
+    largeCloud2.y = 180;
+  
+    hills = new Sprite(id["Hills.png"]);
+    hills.y = 796 - hills.height;
+  
+    nearHill = new Sprite(id["Front_Hill.png"]);
+    nearHill.y = sky.height - nearHill.height;
+  
+    hut = new Sprite(id["House.png"]);
+    hut.x = sky.width/2 - hut.width/2;
+    hut.y = sky.height - hut.height;
+  
+    // set up rafPlane
+    rafPlane = new Sprite(id["RAF_Plane02sized.png"]);
+    rafPlane.x = 40;
+    rafPlane.y = sky.height - rafPlane.height/2;
+    rafPlane.rotation = 0;
+    rafPlane.speed = 0;
+    rafPlane.pivot._x = 40;
+    rafPlane.pivot._y = 28;
+    rafPlane.takeOff = false;
+    rafPlane.stall = false;
+
+    // set up key logging
+    keyState = [];
+
+    redBarron = new Sprite(id["RedBarren flipped.png"]);
+    redBarron.x = sky.width - redBarron.width;
+    redBarron.y = sky.height - redBarron.height;
+  
+    flatCloud = new Sprite(id["FlatCloud.png"]);
+    flatCloud.x = 160;
+    flatCloud.y = 600;
+  
+    flatCloudDistant = new Sprite(id["FlatCloud_distant.png"]);
+    flatCloudDistant.x = 800;
+    flatCloudDistant.y = 580;
+  
+    gameScene.addChild(flatCloudDistant, hills, flatCloud, nearHill, balloon, hut, rafPlane, redBarron, largeCloud1, largeCloud2);
+
+    //Set the game state
+    state = play;
+  
+    //Start the game loop 
+    app.ticker.add(delta => gameLoop(delta));
   }
-);
-//Add the canvas
-document.body.appendChild(app.view);
-loader
-  .add("images/bi-paint-textures.json")
-  .load(setup);
+  
+  function gameLoop(delta) {
+    state(delta);
+  }
+  
+  function play() {
+    // boundary
+    if (rafPlane.x > sky.width - 40) rafPlane.x = 0;
+    if (rafPlane.x < 0) rafPlane.x = sky.width - 40;
+    if (rafPlane.y < 28) {
+      rafPlane.y = 28; 
+      rafPlane.stall = true;
+    }
 
-let state, rafPlane, redBarron, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, RAFPaintBall, redBarronPaintBall;
+    //Left arrow key
+    if(keyState[37]) {
+      rafPlane.rotation -= 1/8;
+      if (rafPlane.rotation < (-2 * Math.PI)) {
+        rafPlane.rotation = 0;
+      }
+    };
+    // right arrow
+    if(keyState[39]) {
+      rafPlane.rotation += 1/8;
+      if (rafPlane.rotation > 2 * Math.PI) {
+        rafPlane.rotation = 0;
+      }
+    }
 
-function setup() {
-  gameScene = new Container();
-  app.stage.addChild(gameScene);
-  id = resources["images/bi-paint-textures.json"].textures;
+    // regular flight
+    if (!rafPlane.stall) {
+      // gravity
+      // plane flying up
+       if ( (rafPlane.rotation < 0 && rafPlane.rotation > -Math.PI)  || (rafPlane.rotation > Math.PI && rafPlane.rotation < 2 * Math.PI) ) {
+      rafPlane.speed -= 0.25 * Math.abs(Math.sin(rafPlane.rotation));
+      }
+      // plane flying down
+      if (rafPlane.speed < 10 && ((-Math.PI > rafPlane.rotation && rafPlane.rotation > -2 * Math.PI) || (rafPlane.rotation > 0 && rafPlane.rotation < Math.PI))) {
+        rafPlane.speed += 0.25 * Math.abs(Math.sin(rafPlane.rotation));
+      }
 
-  sky = new Sprite(id["Backgrd.png"]);
-  gameScene.addChild(sky);
+      // wind resistance
+      if (rafPlane.speed > 2) {
+        rafPlane.speed -= 0.02;
+      }
 
-  balloon = new Sprite(id["Balloon.png"]);
-  balloon.x = 850;
-  balloon.y = 550;
+      rafPlane.vx = rafPlane.speed * Math.cos(rafPlane.rotation);
+      rafPlane.vy = rafPlane.speed * Math.sin(rafPlane.rotation);
 
-  largeCloud1 = new Sprite(id["BIGCloud.png"]);
-  largeCloud1.x = 600;
-  largeCloud1.y = 220;
+      rafPlane.x += rafPlane.vx;
+      rafPlane.y += rafPlane.vy;
 
-  largeCloud2 = new Sprite(id["BIGCloud.png"]);
-  largeCloud2.x = 260;
-  largeCloud2.y = 180;
+      // plane able to take off begin mechanics
+      if (rafPlane.speed > 5) {
+        rafPlane.takeOff = true;
+      }
 
-  hills = new Sprite(id["Hills.png"]);
-  hills.y = 796 - hills.height;
+      // slow plane loss of uplift
+      if (rafPlane.takeOff && rafPlane.speed < 5) {
+        rafPlane.y += 1;
+      }
 
-  nearHill = new Sprite(id["Front_Hill.png"]);
-  nearHill.y = gameScene.height - nearHill.height;
+      // accelerate, up arrow
+      if(keyState[38]) {
+        if (rafPlane.speed < 6) {
+          rafPlane.speed += 0.175;
+        }
+      }
 
-  hut = new Sprite(id["House.png"]);
-  hut.x = gameScene.width/2 - hut.width/2;
-  hut.y = gameScene.height - hut.height;
+      if (rafPlane.takeOff && rafPlane.speed < 3) {
+        rafPlane.stall = true;
+        keyState[38] = false;
+      }
+    }
 
-  RAFPlane = new Sprite(id["RAF_Plane02sized.png"]);
-  RAFPlane.y = gameScene.height - RAFPlane.height;
+    // if stalled
+    if (rafPlane.takeOff && rafPlane.stall) {
+      // if stalling facing left continue fall left
+      if ((rafPlane.rotation < -0.5 * Math.PI && rafPlane.rotation > -1.5 * Math.PI) || (rafPlane.rotation > 0.5 * Math.PI && rafPlane.rotation < 1.5 * Math.PI)) {
+        rafPlane.x -= 1;
+      }
+      // if stalling facing right, fall right
+      if ((rafPlane.rotation > -0.5 * Math.PI && rafPlane.rotation < 0) || (rafPlane.rotation > 1.5 * Math.PI && rafPlane.rotation < 2 * Math.PI)) {
+        rafPlane.x += 1;
+      }
+      // gravity
+      rafPlane.y *= 1.0125;
 
-  redBarron = new Sprite(id["RedBarren flipped.png"]);
-  redBarron.x = gameScene.width - redBarron.width;
-  redBarron.y = gameScene.height - redBarron.height;
+      // if facing downward no stall
+      if ((rafPlane.rotation < -1.4 * Math.PI && rafPlane.rotation > -1.6 * Math.PI) || (rafPlane.rotation > 0.4 * Math.PI && rafPlane.rotation < 0.6 * Math.PI)) {
+        rafPlane.speed = 4;
+        rafPlane.stall = false;
+        keyState[38] = true;
+      }
+    }
 
-  flatCloud = new Sprite(id["FlatCloud.png"]);
-  flatCloud.x = 160;
-  flatCloud.y = 600;
+  }
+  
+  /* Helper functions */
 
-  flatCloudDistant = new Sprite(id["FlatCloud_distant.png"]);
-  flatCloudDistant.x = 800;
-  flatCloudDistant.y = 580;
+  // create key log funcs
+  const keyPress = function(e) {
+    if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 32) {
+      keyState[e.keyCode] = true;
+      event.preventDefault();
+    }
+  }
 
-  gameScene.addChild(flatCloudDistant, hills, flatCloud, nearHill, balloon, hut, RAFPlane, redBarron, largeCloud1, largeCloud2);
+  const keyRelease = function(e) {
+    if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 32) {
+      keyState[e.keyCode] = false;
+      event.preventDefault();
+    }
+  }
 
-  state = play;
- 
-  app.ticker.add(() => gameLoop());
-}
+  window.addEventListener("keydown", keyPress);
+  window.addEventListener("keyup", keyRelease);
 
-function gameLoop(){
-
-}
-
-function play() {
-
-}
-
+  </script>
 </script>
 </body>
