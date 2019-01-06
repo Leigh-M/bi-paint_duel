@@ -32,7 +32,7 @@
     .add("images/bi-paint-textures.json")
     .load(setup);
 
-  let state, rafPlane, redBarron, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, rafPaintBall, redBarronPaintBall, keyState;
+  let state, rafPlane, redBaron, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, rafPaintBall, redBaronPaintBall, keyState;
   
   function setup() {
     gameScene = new Container();
@@ -64,24 +64,30 @@
     hut = new Sprite(id["House.png"]);
     hut.x = sky.width/2 - hut.width/2;
     hut.y = sky.height - hut.height;
-  
+
+    // Animate planes
+    const plane = function plane(plane, x) {
+      plane.x = x;
+      plane.y = sky.height - plane.height/2;
+      plane.rotation = 0;
+      plane.speed = 0;
+      plane.pivot._x = 40;
+      plane.pivot._y = 28;
+      plane.takeOff = false;
+      plane.stall = false;
+      return null;
+    }
+
     // set up rafPlane
     rafPlane = new Sprite(id["RAF_Plane02sized.png"]);
-    rafPlane.x = 40;
-    rafPlane.y = sky.height - rafPlane.height/2;
-    rafPlane.rotation = 0;
-    rafPlane.speed = 0;
-    rafPlane.pivot._x = 40;
-    rafPlane.pivot._y = 28;
-    rafPlane.takeOff = false;
-    rafPlane.stall = false;
+    plane(rafPlane, 40);
 
+    // red Baron
+    redBaron = new Sprite(id["RedBarren flipped.png"]);
+    plane(redBaron, sky.width - redBaron.width + 40);
+    
     // set up key logging
     keyState = [];
-
-    redBarron = new Sprite(id["RedBarren flipped.png"]);
-    redBarron.x = sky.width - redBarron.width;
-    redBarron.y = sky.height - redBarron.height;
   
     flatCloud = new Sprite(id["FlatCloud.png"]);
     flatCloud.x = 160;
@@ -91,7 +97,7 @@
     flatCloudDistant.x = 800;
     flatCloudDistant.y = 580;
   
-    gameScene.addChild(flatCloudDistant, hills, flatCloud, nearHill, balloon, hut, rafPlane, redBarron, largeCloud1, largeCloud2);
+    gameScene.addChild(flatCloudDistant, hills, flatCloud, nearHill, balloon, hut, rafPlane, redBaron, largeCloud1, largeCloud2);
 
     //Set the game state
     state = play;
@@ -112,23 +118,45 @@
       rafPlane.y = 28; 
       rafPlane.stall = true;
     }
+    if (redBaron.x > sky.width - 40) redBaron.x = 0;
+    if (redBaron.x < 0) redBaron.x = sky.width - 40;
+    if (redBaron.y < 28) {
+      redBaron.y = 28; 
+      redBaron.stall = true;
+    }
 
     //Left arrow key
     if(keyState[37]) {
-      rafPlane.rotation -= 1/8;
-      if (rafPlane.rotation < (-2 * Math.PI)) {
-        rafPlane.rotation = 0;
+      redBaron.rotation -= 1/8;
+      if (redBaron.rotation < (-2 * Math.PI)) {
+        redBaron.rotation = 0;
       }
     };
     // right arrow
     if(keyState[39]) {
+      redBaron.rotation += 1/8;
+      if (redBaron.rotation > 2 * Math.PI) {
+        redBaron.rotation = 0;
+      }
+    }
+
+    //z keyr
+    if(keyState[90]) {
+      rafPlane.rotation -= 1/8;
+      if (rafPlane.rotation < (-2 * Math.PI)) {
+        rafPlane.rotation = 0;
+      }
+    }
+
+    //x key
+    if(keyState[88]) {
       rafPlane.rotation += 1/8;
       if (rafPlane.rotation > 2 * Math.PI) {
         rafPlane.rotation = 0;
       }
     }
 
-    // regular flight
+    // rafPlane regular flight
     if (!rafPlane.stall) {
       // gravity
       // plane flying up
@@ -161,8 +189,8 @@
         rafPlane.y += 1;
       }
 
-      // accelerate, up arrow
-      if(keyState[38]) {
+      // accelerate, q
+      if(keyState[81]) {
         if (rafPlane.speed < 6) {
           rafPlane.speed += 0.175;
         }
@@ -170,11 +198,11 @@
 
       if (rafPlane.takeOff && rafPlane.speed < 3) {
         rafPlane.stall = true;
-        keyState[38] = false;
+        keyState[81] = false;
       }
     }
 
-    // if stalled
+    // rafPlane if stalled
     if (rafPlane.takeOff && rafPlane.stall) {
       // if stalling facing left continue fall left
       if ((rafPlane.rotation < -0.5 * Math.PI && rafPlane.rotation > -1.5 * Math.PI) || (rafPlane.rotation > 0.5 * Math.PI && rafPlane.rotation < 1.5 * Math.PI)) {
@@ -191,9 +219,81 @@
       if ((rafPlane.rotation < -1.4 * Math.PI && rafPlane.rotation > -1.6 * Math.PI) || (rafPlane.rotation > 0.4 * Math.PI && rafPlane.rotation < 0.6 * Math.PI)) {
         rafPlane.speed = 4;
         rafPlane.stall = false;
+        keyState[81] = true;
+      }
+    }
+
+
+    // need to do redBaron stall, then check all OK for redBaron
+
+
+    // redBaron regular flight
+    if (!redBaron.stall) {
+      // gravity
+      // plane flying up
+      if ( (redBaron.rotation > 0 && redBaron.rotation < Math.PI)  || (redBaron.rotation < -Math.PI && redBaron.rotation > -2 * Math.PI) ) {
+      redBaron.speed -= 0.25 * Math.abs(Math.sin(redBaron.rotation));
+      }
+      // plane flying down
+      if (redBaron.speed < 10 && ((redBaron.rotation < 0 && redBaron.rotation > -Math.PI)  || (redBaron.rotation > Math.PI && redBaron.rotation < 2 * Math.PI))) {
+        redBaron.speed += 0.25 * Math.abs(Math.sin(redBaron.rotation));
+      }
+
+      // wind resistance
+      if (redBaron.speed > 2) {
+        redBaron.speed -= 0.02;
+      }
+
+      redBaron.vx = redBaron.speed * Math.cos(redBaron.rotation);
+      redBaron.vy = redBaron.speed * Math.sin(redBaron.rotation);
+
+      redBaron.x -= redBaron.vx;
+      redBaron.y -= redBaron.vy;
+
+      // plane able to take off begin mechanics
+      if (redBaron.speed > 5) {
+        redBaron.takeOff = true;
+      }
+
+      // slow plane loss of uplift
+      if (redBaron.takeOff && redBaron.speed < 5) {
+        redBaron.y += 1;
+      }
+
+      // accelerate, up arrow
+      if(keyState[38]) {
+        if (redBaron.speed < 6) {
+          redBaron.speed += 0.175;
+        }
+      }
+
+      if (redBaron.takeOff && redBaron.speed < 3) {
+        redBaron.stall = true;
+        keyState[38] = false;
+      }
+    }
+
+    // redBaron if stalled
+    if (redBaron.takeOff && redBaron.stall) {
+      // if stalling facing left continue fall left
+      if ((redBaron.rotation < 0.5 * Math.PI && redBaron.rotation > -0.5 * Math.PI) || (redBaron.rotation > 1.5 * Math.PI && redBaron.rotation < -1.5 * Math.PI)) {
+        redBaron.x -= 1;
+      }
+      // if stalling facing right, fall right
+      if ((redBaron.rotation > 0.5 * Math.PI && redBaron.rotation < 1.5 * Math.PI) || (redBaron.rotation < -0.5 * Math.PI && redBaron.rotation < -1.5 * Math.PI)) {
+        redBaron.x += 1;
+      }
+      // gravity
+      redBaron.y *= 1.0125;
+
+      // if facing downward no stall
+      if ((redBaron.rotation < -0.4 * Math.PI && redBaron.rotation > -0.6 * Math.PI) || (redBaron.rotation > 1.4 * Math.PI && redBaron.rotation < 1.6 * Math.PI)) {
+        redBaron.speed = 4;
+        redBaron.stall = false;
         keyState[38] = true;
       }
     }
+
 
   }
   
@@ -201,14 +301,14 @@
 
   // create key log funcs
   const keyPress = function(e) {
-    if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 32) {
+    if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 32 || e.keyCode === 81 || e.keyCode === 88 || e.keyCode === 90) {
       keyState[e.keyCode] = true;
       event.preventDefault();
     }
   }
 
   const keyRelease = function(e) {
-    if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 32) {
+    if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 32 || e.keyCode === 81 || e.keyCode === 88 || e.keyCode === 90) {
       keyState[e.keyCode] = false;
       event.preventDefault();
     }
