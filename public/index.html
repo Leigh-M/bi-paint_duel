@@ -146,8 +146,28 @@
       setTimeout(() => {gameScene.removeChild(crashedPlane)}, 1000);
     }
 
-    // ground collision rafPlane
-    if (rafPlane.takeOff && rafPlane.y > sky.height - 28) {
+    // rafPlane collision logic
+    let rafGrCol = false, hutWallCol = false, hutRoofCol = false, airCol = false;
+    // ground col
+    if (rafPlane.takeOff && rafPlane.y > sky.height - 28) rafGrCol = true;
+
+    // hut wall col, 2x rectangles
+    if (
+      !(hut.x + hut.width < rafPlane.x + 20) &&
+      !(rafPlane.x + rafPlane.width < hut.x + 50) &&
+      !(hut.y + hut.height < rafPlane.y) &&
+      !(rafPlane.y + rafPlane.height < hut.y + 88)
+    ) hutWallCol = true;
+
+    // hut roof col, 2x circles
+    hutRoofCol = (() => {
+      let dX = hut.x + 75 - rafPlane.x, dY = hut.y + 70 - rafPlane.y;
+      let distance = Math.sqrt( (dX * dX ) + (dY * dY ) );
+      return distance < ( ((hut.width - 20) / 2) + (rafPlane.height / 2 ) );
+    })();
+
+    // rafPlane ground or hut collision occurred
+    if (rafGrCol || hutWallCol || hutRoofCol) {
       p2.score += 1;
       crashedPlane = new Sprite(id["crashedRAF.png"]);
       crash(rafPlane, crashedPlane);
@@ -155,9 +175,29 @@
       plane(rafPlane, 40);
       gameScene.addChild(rafPlane);
     }
+    
+    // redBaron collision logic
+    let RBGrCol = false, RBhutWallCol = false, RBhutRoofCol = false;
+    // ground col
+    if (redBaron.takeOff && redBaron.y > sky.height - 28) RBGrCol = true;
 
-    // ground collision RBPlane
-    if (redBaron.takeOff && redBaron.y > sky.height - 28) {
+    // hut wall col, 2x rectangles
+    if (
+      !(hut.x + hut.width < redBaron.x + 20) &&
+      !(redBaron.x + redBaron.width < hut.x + 50) &&
+      !(hut.y + hut.height < redBaron.y) &&
+      !(redBaron.y + redBaron.height < hut.y + 88)
+    ) RBhutWallCol = true;
+
+    // hut roof col, 2x circles
+    RBhutRoofCol = (() => {
+      let dX = hut.x + 75 - redBaron.x, dY = hut.y + 70 - redBaron.y;
+      let distance = Math.sqrt( (dX * dX ) + (dY * dY ) );
+      return distance < ( ((hut.width - 20) / 2) + (redBaron.height / 2 ) );
+    })();
+
+    // redBaron ground or hut collision occured
+    if (RBGrCol || RBhutWallCol || RBhutRoofCol) {
       p1.score += 1;
       crashedPlane = new Sprite(id["crashedRB.png"]);
       crash(redBaron, crashedPlane);
