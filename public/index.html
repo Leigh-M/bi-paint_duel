@@ -137,15 +137,13 @@
     // func to swap in crashed plane sprite
     const crash = function crash(planeSprite, crashedPlane) {
       crashedPlane.x = planeSprite.x;
-      crashedPlane.y = sky.height - 38;
+      crashedPlane.y = planeSprite.y;
+      crashedPlane.pivot._x = planeSprite.pivot._x;
+      crashedPlane.pivot._y = planeSprite.pivot._y;
       crashedPlane.rotation = planeSprite.rotation;
       gameScene.addChild(crashedPlane);
       gameScene.removeChild(planeSprite);
-      setTimeout(
-        function () {
-          gameScene.removeChild(crashedPlane)
-        },
-      1000);
+      setTimeout(() => {gameScene.removeChild(crashedPlane)}, 1000);
     }
 
     // ground collision rafPlane
