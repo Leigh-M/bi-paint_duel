@@ -1,7 +1,12 @@
 <!DOCTYPE html>
 <meta charset="utf-8">
+<html lang="en">
+
+<head>
 <link rel="icon" href="images/favicon.png">
-<title>Bi-paint duel!</title>
+<title>Bi-Plane Paint Duel!</title>
+</head>
+
 <body>
 <script src="./pixi/pixi.min.js"></script>
 <script>
@@ -17,7 +22,8 @@
       TextStyle = PIXI.TextStyle;
 
   //Create app
-  let app = new Application({ 
+  let app = new Application(
+    {
       width: 2102, 
       height: 796,                       
       antialiasing: true, 
@@ -29,10 +35,9 @@
   //Add the canvas
   document.body.appendChild(app.view);
   loader
-    .add("images/bi-paint-textures.json")
-    .load(setup);
+    .add("images/bi-paint-textures.json").load(setup);
 
-  let state, rafPlane, redBaron, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, rafPaintBall, redBaronPaintBall, keyState;
+  let state, rafPlane, redBaron, plane, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, rafPaintBall, redBaronPaintBall, keyState, p1, p2;
   
   function setup() {
     gameScene = new Container();
@@ -66,15 +71,15 @@
     hut.y = sky.height - hut.height;
 
     // Animate planes
-    const plane = function plane(plane, x) {
-      plane.x = x;
-      plane.y = sky.height - plane.height/2;
-      plane.rotation = 0;
-      plane.speed = 0;
-      plane.pivot._x = 40;
-      plane.pivot._y = 28;
-      plane.takeOff = false;
-      plane.stall = false;
+    plane = function plane(planeSprite, x) {
+      planeSprite.x = x;
+      planeSprite.y = sky.height - planeSprite.height/2;
+      planeSprite.rotation = 0;
+      planeSprite.speed = 0;
+      planeSprite.pivot._x = 40;
+      planeSprite.pivot._y = 28;
+      planeSprite.takeOff = false;
+      planeSprite.stall = false;
       return null;
     }
 
@@ -96,6 +101,10 @@
     flatCloudDistant = new Sprite(id["FlatCloud_distant.png"]);
     flatCloudDistant.x = 800;
     flatCloudDistant.y = 580;
+
+    // players
+    p1 = {};
+    p2 = {};
   
     gameScene.addChild(flatCloudDistant, hills, flatCloud, nearHill, balloon, hut, rafPlane, redBaron, largeCloud1, largeCloud2);
 
@@ -125,34 +134,72 @@
       redBaron.stall = true;
     }
 
-    //Left arrow key
-    if(keyState[37]) {
-      redBaron.rotation -= 1/8;
-      if (redBaron.rotation < (-2 * Math.PI)) {
-        redBaron.rotation = 0;
+    // func to swap in crashed plane sprite
+    const crash = function crash(planeSprite, crashedPlane) {
+      crashedPlane.x = planeSprite.x;
+      crashedPlane.y = sky.height - 38;
+      crashedPlane.rotation = planeSprite.rotation;
+      gameScene.addChild(crashedPlane);
+      gameScene.removeChild(planeSprite);
+      setTimeout(
+        function () {
+          gameScene.removeChild(crashedPlane)
+        },
+      1000);
+    }
+
+    // ground collision rafPlane
+    if (rafPlane.takeOff && rafPlane.y > sky.height - 28) {
+      p2.score += 1;
+      crashedPlane = new Sprite(id["crashedRAF.png"]);
+      crash(rafPlane, crashedPlane);
+      rafPlane = new Sprite(id["RAF_Plane02sized.png"]);
+      plane(rafPlane, 40);
+      gameScene.addChild(rafPlane);
+    }
+
+    // ground collision RBPlane
+    if (redBaron.takeOff && redBaron.y > sky.height - 28) {
+      p1.score += 1;
+      crashedPlane = new Sprite(id["crashedRB.png"]);
+      crash(redBaron, crashedPlane);
+      redBaron = new Sprite(id["RedBarren flipped.png"]);
+      plane(redBaron, sky.width - redBaron.width + 40);
+      gameScene.addChild(redBaron);
+    }
+
+    // left and right controls
+    if (rafPlane.takeOff) {
+      //z key
+      if(keyState[90]) {
+        rafPlane.rotation -= 1/8;
+        if (rafPlane.rotation < (-2 * Math.PI)) {
+          rafPlane.rotation = 0;
+        }
       }
-    };
-    // right arrow
-    if(keyState[39]) {
-      redBaron.rotation += 1/8;
-      if (redBaron.rotation > 2 * Math.PI) {
-        redBaron.rotation = 0;
+      //x key
+      if(keyState[88]) {
+        rafPlane.rotation += 1/8;
+        if (rafPlane.rotation > 2 * Math.PI) {
+          rafPlane.rotation = 0;
+        }
       }
     }
 
-    //z keyr
-    if(keyState[90]) {
-      rafPlane.rotation -= 1/8;
-      if (rafPlane.rotation < (-2 * Math.PI)) {
-        rafPlane.rotation = 0;
-      }
-    }
-
-    //x key
-    if(keyState[88]) {
-      rafPlane.rotation += 1/8;
-      if (rafPlane.rotation > 2 * Math.PI) {
-        rafPlane.rotation = 0;
+    if (redBaron.takeOff) {
+      //Left arrow key
+      if(keyState[37]) {
+        redBaron.rotation -= 1/8;
+        if (redBaron.rotation < (-2 * Math.PI)) {
+          redBaron.rotation = 0;
+        }
+      };
+      // right arrow
+      if(keyState[39]) {
+        redBaron.rotation += 1/8;
+        if (redBaron.rotation > 2 * Math.PI) {
+          redBaron.rotation = 0;
+        }
       }
     }
 
@@ -190,15 +237,15 @@
       }
 
       // accelerate, q
-      if(keyState[81]) {
+      if(keyState[65]) {
         if (rafPlane.speed < 6) {
-          rafPlane.speed += 0.175;
+          rafPlane.speed += 0.16;
         }
       }
 
       if (rafPlane.takeOff && rafPlane.speed < 3) {
         rafPlane.stall = true;
-        keyState[81] = false;
+        keyState[65] = false;
       }
     }
 
@@ -219,13 +266,9 @@
       if ((rafPlane.rotation < -1.4 * Math.PI && rafPlane.rotation > -1.6 * Math.PI) || (rafPlane.rotation > 0.4 * Math.PI && rafPlane.rotation < 0.6 * Math.PI)) {
         rafPlane.speed = 4;
         rafPlane.stall = false;
-        keyState[81] = true;
+        keyState[65] = true;
       }
     }
-
-
-    // need to do redBaron stall, then check all OK for redBaron
-
 
     // redBaron regular flight
     if (!redBaron.stall) {
@@ -263,7 +306,7 @@
       // accelerate, up arrow
       if(keyState[38]) {
         if (redBaron.speed < 6) {
-          redBaron.speed += 0.175;
+          redBaron.speed += 0.16;
         }
       }
 
@@ -293,22 +336,19 @@
         keyState[38] = true;
       }
     }
-
-
   }
   
   /* Helper functions */
-
-  // create key log funcs
+  // key log funcs
   const keyPress = function(e) {
-    if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 32 || e.keyCode === 81 || e.keyCode === 88 || e.keyCode === 90) {
+    if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 32 || e.keyCode === 65 || e.keyCode === 88 || e.keyCode === 90) {
       keyState[e.keyCode] = true;
       event.preventDefault();
     }
   }
 
   const keyRelease = function(e) {
-    if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 32 || e.keyCode === 81 || e.keyCode === 88 || e.keyCode === 90) {
+    if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 32 || e.keyCode === 65 || e.keyCode === 88 || e.keyCode === 90) {
       keyState[e.keyCode] = false;
       event.preventDefault();
     }
@@ -320,3 +360,4 @@
   </script>
 </script>
 </body>
+</html>
