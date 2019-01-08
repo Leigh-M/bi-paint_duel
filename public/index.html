@@ -37,7 +37,7 @@
   loader
     .add("images/bi-paint-textures.json").load(setup);
 
-  let state, rafPlane, redBaron, plane, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, rafPaintBall, redBaronPaintBall, keyState, p1, p2;
+  let state, rafPlane, redBaron, plane, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, rafPaintBall, redBaronPaintBall, keyState, p1, p2, airCrashedRAF, airCrashedRB, airColAnim;
   
   function setup() {
     gameScene = new Container();
@@ -103,8 +103,8 @@
     flatCloudDistant.y = 580;
 
     // players
-    p1 = {};
-    p2 = {};
+    p1 = {score: 0};
+    p2 = {score: 0};
   
     gameScene.addChild(flatCloudDistant, hills, flatCloud, nearHill, balloon, hut, rafPlane, redBaron, largeCloud1, largeCloud2);
 
@@ -143,11 +143,66 @@
       crashedPlane.rotation = planeSprite.rotation;
       gameScene.addChild(crashedPlane);
       gameScene.removeChild(planeSprite);
-      setTimeout(() => {gameScene.removeChild(crashedPlane)}, 1000);
+      setTimeout(() => {gameScene.removeChild(crashedPlane)}, 1400);
+    }
+
+    const airCollision = function airCollision(raf, rB, crashedRAF, crashedRB) {
+      crashedRAF.x = raf.x;
+      crashedRAF.y = raf.y;
+      crashedRAF.pivot._x = raf.pivot._x;
+      crashedRAF.pivot._y = raf.pivot._y;
+      crashedRAF.rotation = raf.rotation;
+
+      gameScene.addChild(crashedRAF);
+      gameScene.removeChild(raf);
+      setTimeout(() => {gameScene.removeChild(crashedRAF); 
+      airColAnim = false}, 1400);
+
+      crashedRB.x = rB.x;
+      crashedRB.y = rB.y;
+      crashedRB.pivot._x = rB.pivot._x;
+      crashedRB.pivot._y = rB.pivot._y;
+      crashedRB.rotation = rB.rotation;
+
+      gameScene.addChild(crashedRB);
+      gameScene.removeChild(rB);
+      setTimeout(() => {
+        gameScene.removeChild(crashedRB);
+        airColAnim = false;
+      }, 1400);
+    }
+
+    if (airColAnim) {
+      if (airCrashedRAF.y < sky.height - 20) airCrashedRAF.y += 5;
+      if (airCrashedRB.y < sky.height - 20) airCrashedRB.y += 5;
+    }
+
+    // air collision, 2x rectangles
+    if (
+      !(rafPlane.x + rafPlane.width < redBaron.x) &&
+      !(redBaron.x + redBaron.width < rafPlane.x) &&
+      !(rafPlane.y + rafPlane.height < redBaron.y) &&
+      !(redBaron.y + redBaron.height < rafPlane.y)
+      ) {
+      airColAnim = true;
+      p1.score += 1;
+      p2.score += 1;
+
+      airCrashedRAF = new Sprite(id["crashedRAF.png"]);
+      airCrashedRB = new Sprite(id["crashedRB.png"]);
+      airCollision(rafPlane, redBaron, airCrashedRAF, airCrashedRB);
+
+      rafPlane = new Sprite(id["RAF_Plane02sized.png"]);
+      plane(rafPlane, 40);
+      gameScene.addChild(rafPlane);
+
+      redBaron = new Sprite(id["RedBarren flipped.png"]);
+      plane(redBaron, sky.width - redBaron.width + 40);
+      gameScene.addChild(redBaron);
     }
 
     // rafPlane collision logic
-    let rafGrCol = false, hutWallCol = false, hutRoofCol = false, airCol = false;
+    let rafGrCol = false, hutWallCol = false, hutRoofCol = false;
     // ground col
     if (rafPlane.takeOff && rafPlane.y > sky.height - 28) rafGrCol = true;
 
@@ -178,10 +233,10 @@
     
     // redBaron collision logic
     let RBGrCol = false, RBhutWallCol = false, RBhutRoofCol = false;
-    // ground col
+    // ground coll
     if (redBaron.takeOff && redBaron.y > sky.height - 28) RBGrCol = true;
 
-    // hut wall col, 2x rectangles
+    // hut wall coll, 2x rectangles
     if (
       !(hut.x + hut.width < redBaron.x + 20) &&
       !(redBaron.x + redBaron.width < hut.x + 50) &&
@@ -189,7 +244,7 @@
       !(redBaron.y + redBaron.height < hut.y + 88)
     ) RBhutWallCol = true;
 
-    // hut roof col, 2x circles
+    // hut roof coll, 2x circles
     RBhutRoofCol = (() => {
       let dX = hut.x + 75 - redBaron.x, dY = hut.y + 70 - redBaron.y;
       let distance = Math.sqrt( (dX * dX ) + (dY * dY ) );
