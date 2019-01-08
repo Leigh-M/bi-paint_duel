@@ -37,7 +37,7 @@
   loader
     .add("images/bi-paint-textures.json").load(setup);
 
-  let state, rafPlane, redBaron, plane, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, rafPaintBall, redBaronPaintBall, keyState, p1, p2, airCrashedRAF, airCrashedRB, airColAnim;
+  let state, rafPlane, redBaron, plane, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, rafPaintBall, redBaronPaintBall, keyState, p1, p2, airCrashedRAF, airCrashedRB, airColAnim, crash, airCollision;
   
   function setup() {
     gameScene = new Container();
@@ -70,19 +70,6 @@
     hut.x = sky.width/2 - hut.width/2;
     hut.y = sky.height - hut.height;
 
-    // Animate planes
-    plane = function plane(planeSprite, x) {
-      planeSprite.x = x;
-      planeSprite.y = sky.height - planeSprite.height/2;
-      planeSprite.rotation = 0;
-      planeSprite.speed = 0;
-      planeSprite.pivot._x = 40;
-      planeSprite.pivot._y = 28;
-      planeSprite.takeOff = false;
-      planeSprite.stall = false;
-      return null;
-    }
-
     // set up rafPlane
     rafPlane = new Sprite(id["RAF_Plane02sized.png"]);
     plane(rafPlane, 40);
@@ -105,7 +92,7 @@
     // players
     p1 = {score: 0};
     p2 = {score: 0};
-  
+
     gameScene.addChild(flatCloudDistant, hills, flatCloud, nearHill, balloon, hut, rafPlane, redBaron, largeCloud1, largeCloud2);
 
     //Set the game state
@@ -120,7 +107,7 @@
   }
   
   function play() {
-    // boundary
+    // left, right and sky boundary
     if (rafPlane.x > sky.width - 40) rafPlane.x = 0;
     if (rafPlane.x < 0) rafPlane.x = sky.width - 40;
     if (rafPlane.y < 28) {
@@ -132,44 +119,6 @@
     if (redBaron.y < 28) {
       redBaron.y = 28; 
       redBaron.stall = true;
-    }
-
-    // func to swap in crashed plane sprite
-    const crash = function crash(planeSprite, crashedPlane) {
-      crashedPlane.x = planeSprite.x;
-      crashedPlane.y = planeSprite.y;
-      crashedPlane.pivot._x = planeSprite.pivot._x;
-      crashedPlane.pivot._y = planeSprite.pivot._y;
-      crashedPlane.rotation = planeSprite.rotation;
-      gameScene.addChild(crashedPlane);
-      gameScene.removeChild(planeSprite);
-      setTimeout(() => {gameScene.removeChild(crashedPlane)}, 1400);
-    }
-
-    const airCollision = function airCollision(raf, rB, crashedRAF, crashedRB) {
-      crashedRAF.x = raf.x;
-      crashedRAF.y = raf.y;
-      crashedRAF.pivot._x = raf.pivot._x;
-      crashedRAF.pivot._y = raf.pivot._y;
-      crashedRAF.rotation = raf.rotation;
-
-      gameScene.addChild(crashedRAF);
-      gameScene.removeChild(raf);
-      setTimeout(() => {gameScene.removeChild(crashedRAF); 
-      airColAnim = false}, 1400);
-
-      crashedRB.x = rB.x;
-      crashedRB.y = rB.y;
-      crashedRB.pivot._x = rB.pivot._x;
-      crashedRB.pivot._y = rB.pivot._y;
-      crashedRB.rotation = rB.rotation;
-
-      gameScene.addChild(crashedRB);
-      gameScene.removeChild(rB);
-      setTimeout(() => {
-        gameScene.removeChild(crashedRB);
-        airColAnim = false;
-      }, 1400);
     }
 
     if (airColAnim) {
@@ -432,6 +381,58 @@
   }
   
   /* Helper functions */
+  // Animate planes
+  plane = function plane(planeSprite, x) {
+    planeSprite.x = x;
+    planeSprite.y = sky.height - planeSprite.height/2;
+    planeSprite.rotation = 0;
+    planeSprite.speed = 0;
+    planeSprite.pivot._x = 40;
+    planeSprite.pivot._y = 28;
+    planeSprite.takeOff = false;
+    planeSprite.stall = false;
+    return null;
+  }
+
+  // func to swap in crashed plane sprite
+  crash = function crash(planeSprite, crashedPlane) {
+    crashedPlane.x = planeSprite.x;
+    crashedPlane.y = planeSprite.y;
+    crashedPlane.pivot._x = planeSprite.pivot._x;
+    crashedPlane.pivot._y = planeSprite.pivot._y;
+    crashedPlane.rotation = planeSprite.rotation;
+    gameScene.addChild(crashedPlane);
+    gameScene.removeChild(planeSprite);
+    setTimeout(() => {gameScene.removeChild(crashedPlane)}, 1400);
+  }
+
+  airCollision = function airCollision(raf, rB, crashedRAF, crashedRB) {
+    crashedRAF.x = raf.x;
+    crashedRAF.y = raf.y;
+    crashedRAF.pivot._x = raf.pivot._x;
+    crashedRAF.pivot._y = raf.pivot._y;
+    crashedRAF.rotation = raf.rotation;
+
+    gameScene.addChild(crashedRAF);
+    gameScene.removeChild(raf);
+    setTimeout(() => {gameScene.removeChild(crashedRAF); 
+    airColAnim = false}, 1400);
+
+    crashedRB.x = rB.x;
+    crashedRB.y = rB.y;
+    crashedRB.pivot._x = rB.pivot._x;
+    crashedRB.pivot._y = rB.pivot._y;
+    crashedRB.rotation = rB.rotation;
+
+    gameScene.addChild(crashedRB);
+    gameScene.removeChild(rB);
+    setTimeout(() => {
+      gameScene.removeChild(crashedRB);
+      airColAnim = false;
+    }, 1400);
+  }
+  
+
   // key log funcs
   const keyPress = function(e) {
     if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 32 || e.keyCode === 65 || e.keyCode === 88 || e.keyCode === 90) {
