@@ -90,8 +90,8 @@
     flatCloudDistant.y = 580;
 
     // players
-    p1 = {score: 0};
-    p2 = {score: 0};
+    p1 = {score: 0, shots: []};
+    p2 = {score: 0, shots: []};
 
     gameScene.addChild(flatCloudDistant, hills, flatCloud, nearHill, balloon, hut, rafPlane, redBaron, largeCloud1, largeCloud2);
 
@@ -378,6 +378,34 @@
         keyState[38] = true;
       }
     }
+
+    // rafPlane fire paintball
+    if(rafPlane.takeOff && p1.shots.length < 2) {
+      if (keyState[83]) {
+        keyState[83] = false;
+        let shot = (new Sprite(id["rafPaintBall.png"]));
+        p1.shots[p1.shots.length] = shot;
+        paintBall(rafPlane, shot);
+      }
+    }
+
+    // redBaron fire paintball
+    if(redBaron.takeOff && p2.shots.length < 2) {
+      if (keyState[80]) {
+        keyState[80] = false;
+        let shot = (new Sprite(id["RBPaintBall.png"]));
+        p2.shots[p2.shots.length] = shot;
+        paintBall(redBaron, shot);
+      }
+    }
+
+    if (p1.shots.length > 0) {
+      animPaintBalls(p1);
+    }
+
+    if (p2.shots.length > 0) {
+      animPaintBalls(p2);
+    }
   }
   
   /* Helper functions */
@@ -394,6 +422,44 @@
     return null;
   }
 
+  // Fire paint ball
+  paintBall = function paintBall(plane, shot) {
+    shot.x = plane.x;
+    shot.y = plane.y;
+    shot.rotation = plane.rotation;
+    shot.speed = 15;
+    if (plane === rafPlane) {
+      shot.pivot._x = -28;
+      shot.pivot._y = 10;
+    } else {
+      shot.pivot._x = 45;
+      shot.pivot._y = 10;
+    }
+    gameScene.addChild(shot);
+  }
+
+  // animate paint balls
+  animPaintBalls = function animPaintBalls(player) {
+    for (let i = 0; i < player.shots.length; i++) {
+      let vx = player.shots[i].speed * Math.cos(player.shots[i].rotation);
+      let vy = player.shots[i].speed * Math.sin(player.shots[i].rotation);
+
+      if (player === p1) {
+        player.shots[i].x += vx;
+        player.shots[i].y += vy;
+      } else {
+        player.shots[i].x -= vx;
+        player.shots[i].y -= vy;
+      }
+
+      // shot boundaries
+      if (player.shots[i].x > sky.width - 35 || player.shots[i].x < 0 || player.shots[i].y < 0 || player.shots[i].y > sky.height) {
+        gameScene.removeChild(player.shots[i]);
+        player.shots.splice(player.shots[i], 1);
+      }
+    }
+  }
+
   // func to swap in crashed plane sprite
   crash = function crash(planeSprite, crashedPlane) {
     crashedPlane.x = planeSprite.x;
@@ -406,6 +472,7 @@
     setTimeout(() => {gameScene.removeChild(crashedPlane)}, 1400);
   }
 
+  // mid air collision
   airCollision = function airCollision(raf, rB, crashedRAF, crashedRB) {
     crashedRAF.x = raf.x;
     crashedRAF.y = raf.y;
@@ -416,14 +483,13 @@
     gameScene.addChild(crashedRAF);
     gameScene.removeChild(raf);
     setTimeout(() => {gameScene.removeChild(crashedRAF); 
-    airColAnim = false}, 1400);
+      airColAnim = false}, 1400);
 
     crashedRB.x = rB.x;
     crashedRB.y = rB.y;
     crashedRB.pivot._x = rB.pivot._x;
     crashedRB.pivot._y = rB.pivot._y;
     crashedRB.rotation = rB.rotation;
-
     gameScene.addChild(crashedRB);
     gameScene.removeChild(rB);
     setTimeout(() => {
@@ -431,18 +497,17 @@
       airColAnim = false;
     }, 1400);
   }
-  
 
   // key log funcs
   const keyPress = function(e) {
-    if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 32 || e.keyCode === 65 || e.keyCode === 88 || e.keyCode === 90) {
+    if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 80 || e.keyCode === 65 || e.keyCode === 88 || e.keyCode === 83 || e.keyCode === 90) {
       keyState[e.keyCode] = true;
       event.preventDefault();
     }
   }
 
   const keyRelease = function(e) {
-    if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 32 || e.keyCode === 65 || e.keyCode === 88 || e.keyCode === 90) {
+    if (e.keyCode === 38 || e.keyCode === 37 || e.keyCode === 39 || e.keyCode === 80 || e.keyCode === 65 || e.keyCode === 88 || e.keyCode === 83 || e.keyCode === 90) {
       keyState[e.keyCode] = false;
       event.preventDefault();
     }
