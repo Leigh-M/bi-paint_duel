@@ -90,8 +90,8 @@
     flatCloudDistant.y = 580;
 
     // players
-    p1 = {score: 0, shots: []};
-    p2 = {score: 0, shots: []};
+    p1 = {score: 0, shots: [], hit: false};
+    p2 = {score: 0, shots: [], hit: false};
 
     gameScene.addChild(flatCloudDistant, hills, flatCloud, nearHill, balloon, hut, rafPlane, redBaron, largeCloud1, largeCloud2);
 
@@ -264,7 +264,8 @@
 
       rafPlane.vx = rafPlane.speed * Math.cos(rafPlane.rotation);
       rafPlane.vy = rafPlane.speed * Math.sin(rafPlane.rotation);
-
+      // correct plane snaps horizontally to 3.125 instead of Pi
+      if (rafPlane.vy < 0 && rafPlane.vy > -0.25) rafPlane.vy = 0;
       rafPlane.x += rafPlane.vx;
       rafPlane.y += rafPlane.vy;
 
@@ -331,7 +332,8 @@
 
       redBaron.vx = redBaron.speed * Math.cos(redBaron.rotation);
       redBaron.vy = redBaron.speed * Math.sin(redBaron.rotation);
-
+      // correct plane 'snaps' horizontally to 3.125 instead of Pi
+      if (redBaron.vy > 0 && redBaron.vy < 0.25) redBaron.vy = 0;
       redBaron.x -= redBaron.vx;
       redBaron.y -= redBaron.vy;
 
@@ -401,15 +403,40 @@
 
     if (p1.shots.length > 0) {
       animPaintBalls(p1);
+      checkPlaneShot(redBaron, p1);
     }
 
     if (p2.shots.length > 0) {
       animPaintBalls(p2);
+      checkPlaneShot(rafPlane, p2);
     }
+
+    checkPlaneShot = function checkPlaneShot(shotPlane, attackingPlayer) {
+      // circle (shot) colliding with rectangle (plane)
+      function rectCircleColl(circle, rect) {
+        let distX = Math.abs( (circle.x - rect.x - (rect.width / 2)) + 40);
+        let distY = Math.abs( (circle.y - rect.y - (rect.height / 2)) + 29);
+        if (distX > (rect.width/ 2 + circle.width / 2)) return false;
+        if (distY > (rect.height/ 2 + circle.width / 2)) return false;
+        if (distX <= (rect.width / 2)) return true;
+        if (distY <= (rect.height / 2)) return true;
+        let dx = distX - rect.width / 2;
+        let dy = distY - rect.width / 2;
+        return (dx * dx + dy * dy <= (circle.width/ 2 * circle.width / 2));
+      }
+      for (let i = 0; i < attackingPlayer.shots.length; i++) {
+        if (rectCircleColl(attackingPlayer.shots[i], shotPlane)) {
+          attackingPlayer.score += 1;
+          gameScene.removeChild(shotPlane);
+          // logic here to return plane to the hut
+        }
+      }
+    }
+
   }
   
   /* Helper functions */
-  // Animate planes
+  // set up planes
   plane = function plane(planeSprite, x) {
     planeSprite.x = x;
     planeSprite.y = sky.height - planeSprite.height/2;
@@ -443,6 +470,8 @@
     for (let i = 0; i < player.shots.length; i++) {
       let vx = player.shots[i].speed * Math.cos(player.shots[i].rotation);
       let vy = player.shots[i].speed * Math.sin(player.shots[i].rotation);
+      // correct rotation snaps horizontally to 3.125 instead of Pi
+      if ( (vy < 0.25 && vy > 0) || (vy < 0 && vy > -0.25)  )  vy = 0;
 
       if (player === p1) {
         player.shots[i].x += vx;
