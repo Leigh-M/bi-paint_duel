@@ -37,7 +37,7 @@
   loader
     .add("images/bi-paint-textures.json").load(setup);
 
-  let state, rafPlane, redBaron, plane, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, rafPaintBall, redBaronPaintBall, keyState, p1, p2, airCrashedRAF, airCrashedRB, airColAnim, crash, airCollision;
+  let state, rafPlane, redBaron, plane, paintBall, animPaintBalls, crash, airCollision, checkPlaneShot, animPaintedPlane, homeFlight, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, rafPaintBall, redBaronPaintBall, keyState, p1, p2, airCrashedRAF, airCrashedRB, airColAnim;
   
   function setup() {
     gameScene = new Container();
@@ -72,11 +72,11 @@
 
     // set up rafPlane
     rafPlane = new Sprite(id["RAF_Plane02sized.png"]);
-    plane(rafPlane, 40);
+    plane(rafPlane, 122);
 
     // red Baron
     redBaron = new Sprite(id["RedBarren flipped.png"]);
-    plane(redBaron, sky.width - redBaron.width + 40);
+    plane(redBaron, sky.width - redBaron.width - 42);
     
     // set up key logging
     keyState = [];
@@ -90,8 +90,8 @@
     flatCloudDistant.y = 580;
 
     // players
-    p1 = {score: 0, shots: [], hit: false};
-    p2 = {score: 0, shots: [], hit: false};
+    p1 = {score: 0, shots: []};
+    p2 = {score: 0, shots: []};
 
     gameScene.addChild(flatCloudDistant, hills, flatCloud, nearHill, balloon, hut, rafPlane, redBaron, largeCloud1, largeCloud2);
 
@@ -142,11 +142,11 @@
       airCollision(rafPlane, redBaron, airCrashedRAF, airCrashedRB);
 
       rafPlane = new Sprite(id["RAF_Plane02sized.png"]);
-      plane(rafPlane, 40);
+      plane(rafPlane, 122);
       gameScene.addChild(rafPlane);
 
       redBaron = new Sprite(id["RedBarren flipped.png"]);
-      plane(redBaron, sky.width - redBaron.width + 40);
+      plane(redBaron, sky.width - redBaron.width - 42);
       gameScene.addChild(redBaron);
     }
 
@@ -163,7 +163,7 @@
       !(rafPlane.y + rafPlane.height < hut.y + 88)
     ) hutWallCol = true;
 
-    // hut roof col, 2x circles
+    // hut roof col, hut roof roughly circular 2x circles
     hutRoofCol = (() => {
       let dX = hut.x + 75 - rafPlane.x, dY = hut.y + 70 - rafPlane.y;
       let distance = Math.sqrt( (dX * dX ) + (dY * dY ) );
@@ -176,7 +176,7 @@
       crashedPlane = new Sprite(id["crashedRAF.png"]);
       crash(rafPlane, crashedPlane);
       rafPlane = new Sprite(id["RAF_Plane02sized.png"]);
-      plane(rafPlane, 40);
+      plane(rafPlane, 122);
       gameScene.addChild(rafPlane);
     }
     
@@ -206,7 +206,7 @@
       crashedPlane = new Sprite(id["crashedRB.png"]);
       crash(redBaron, crashedPlane);
       redBaron = new Sprite(id["RedBarren flipped.png"]);
-      plane(redBaron, sky.width - redBaron.width + 40);
+      plane(redBaron, sky.width - redBaron.width - 42);
       gameScene.addChild(redBaron);
     }
 
@@ -316,11 +316,11 @@
     // redBaron regular flight
     if (!redBaron.stall) {
       // gravity
-      // plane flying up
+      // plane elevation up
       if ( (redBaron.rotation > 0 && redBaron.rotation < Math.PI)  || (redBaron.rotation < -Math.PI && redBaron.rotation > -2 * Math.PI) ) {
       redBaron.speed -= 0.25 * Math.abs(Math.sin(redBaron.rotation));
       }
-      // plane flying down
+      // plane elevation down
       if (redBaron.speed < 10 && ((redBaron.rotation < 0 && redBaron.rotation > -Math.PI)  || (redBaron.rotation > Math.PI && redBaron.rotation < 2 * Math.PI))) {
         redBaron.speed += 0.25 * Math.abs(Math.sin(redBaron.rotation));
       }
@@ -427,13 +427,97 @@
       for (let i = 0; i < attackingPlayer.shots.length; i++) {
         if (rectCircleColl(attackingPlayer.shots[i], shotPlane)) {
           attackingPlayer.score += 1;
-          gameScene.removeChild(shotPlane);
-          // logic here to return plane to the hut
+          // if (attackingPlayer.score > 15) {}
+          gameScene.removeChild(attackingPlayer.shots[i]);
+          attackingPlayer.shots.splice(i, 1);
+          shotPlane.painted = true;
+          animPaintedPlane(shotPlane);
+          break;
         }
       }
     }
 
+    // change sprite to painted version, set home flight auto pilot coords
+    animPaintedPlane = function animPaintedPlane(shotPlane) {
+      let painted, player;
+      (shotPlane === rafPlane) ? (painted = new Sprite(id["RAFPainted.png"]), player = p1) : (painted = new Sprite(id["RBPainted.png"]), player = p2);
+      painted.x = shotPlane.x;
+      painted.y = shotPlane.y;
+      painted.rotation = shotPlane.rotation;
+      painted.pivot.x = shotPlane.pivot._x;
+      painted.pivot.y = shotPlane.pivot._y;
+      player.painted = painted;
+      // build auto-pilot flight coords to home
+      (function buildFlightPath() {
+        let homeX = (player === p1) ? 40 : sky.width - 43, homeY = sky.height - 30;
+        if (player === p1) {
+          // facing away from home, continue same direction for screen wrap effect
+          if (-0.5 * Math.PI < p1.painted.rotation && p1.painted.rotation < 0.5 * Math.PI) {
+            // low plane left of screen would appear to hit the hut if flying home
+            if (p1.painted.y < sky.height - 200) {
+              if (p1.painted.x < sky.width / 2) {
+                p1.painted.flightCoords = [ [homeX, homeY], [0, homeY], [sky.width, sky.height], [sky.width / 2, 500] ];
+              } else {
+                p1.painted.flightCoords = [ [homeX, homeY], [sky.width, sky.height], [0, homeY] ];
+              }
+            } else {// normal height, regular flight path
+              p1.painted.flightCoords = [ [ homeX, homeY], [sky-width - 400 , sky.height - 300], [sky-width - 375, sky.height - 275], [sky-width - 350, sky.height - 250], [sky-width - 325, sky.height - 225], [sky-width - 300, sky.height - 200], [sky-width - 275, sky.height - 175], [sky-width - 250, sky.height - 150], [sky-width - 225, sky.height - 125], [sky-width - 200, sky.height - 100], [sky-width - 175, sky.height - 75 ], [sky-width - 100, sky.height - 50], [sky-width - 50, sky.height - 50], [sky-width - 25, sky.height - 40], [0, homeY] ];
+            }
+          } else {// facing towards home, fly directly
+            if (p1.painted.y < sky.height - 200) {
+              if (p1.painted.x > sky.width / 2) {
+                p1.painted.flightCoords = [ [homeX, homeY], [sky.width / 2, 500] ];
+              } else {
+                p1.painted.flightCoords = [ [homeX, homeY] ];
+              }
+            }
+          }
+        } else {// p2
+          if (-0.5 * Math.PI < p2.painted.rotation && p2.painted.rotation < 0.5 * Math.PI) {
+            if (p2.painted.y < sky.height - 200) {
+              if (p2.painted.x > sky.width / 2) {
+                p2.painted.flightCoords = [ [homeX, homeY], [0, homeY], [sky.width, homeY],   [sky.width / 2, 500] ];
+              } else {
+                p2.painted.flightCoords = [ [homeX, homeY], [0, homeY], [sky.width, homeY] ];
+              }
+            } else {// normal height, regular flight path
+              p2.painted.flightCoords = [ [ homeX, homeY], [sky.width, homeY], [0, sky.height - 35], [25, sky.height - 40], [50, sky.height - 50], [125, sky.height - 50], [175, sky.height - 75 ], [200, sky.height - 100], [225, sky.height - 125], [250, sky.height - 150], [275, sky.height - 175], [300, sky.height - 200], [325, sky.height - 225], [350, sky.height - 250], [375, sky.height - 275], [400, sky.height - 300] ];
+            }
+          } else {// facing towards home, fly directly
+            if (p2.painted.y < sky.height - 200) {
+              if (p2.painted.x < sky.width / 2) {
+                p2.painted.flightCoords = [ [homeX, homeY], [sky.width / 2, 500] ];
+              } else {
+                p2.painted.flightCoords = [ [homeX, homeY] ];
+              }
+            }
+          }
+        }      
+      })();
+      gameScene.removeChild(shotPlane);
+      gameScene.addChild(player.painted);
+    }
+
+    if (p1.painted !== undefined) {
+      homeFlight(p1);
+    }
+
+    if (p2.painted !== undefined) {
+      homeFlight(p2);
+    }
+
+    // painted, auto flight home
+    homeFlight = function homeFlight(player) {
+      
+      // hard coded test end points working!  
+      // todo: complete function to auto fly through all coords in provided array 
+
+      player.painted.x = player.painted.flightCoords[0][0];
+      player.painted.y = player.painted.flightCoords[0][1];
+    }
+
   }
+
   
   /* Helper functions */
   // set up planes
