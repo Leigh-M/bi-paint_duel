@@ -35,10 +35,10 @@
   //Add the canvas
   document.body.appendChild(app.view);
 
+  let state, rafPlane, redBaron, plane, paintBall, animPaintBalls, crash, airCollision, checkPlaneShot, animPaintedPlane, homeFlight, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, rafPaintBall, redBaronPaintBall, keyState, p1, p2, airCrashedRAF, airCrashedRB, airColAnim;
+
   loader
     .add("images/bi-paint-textures.json").load(setup);
-
-  let state, rafPlane, redBaron, plane, paintBall, animPaintBalls, crash, airCollision, checkPlaneShot, animPaintedPlane, homeFlight, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, rafPaintBall, redBaronPaintBall, keyState, p1, p2, airCrashedRAF, airCrashedRB, airColAnim;
   
   function setup() {
     gameScene = new Container();
