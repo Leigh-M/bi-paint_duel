@@ -94,11 +94,11 @@
     p1 = {score: 0, shots: []};
     p2 = {score: 0, shots: []};
 
-    let score1 = new PIXI.Text(JSON.stringify(p1.score), {font:"50px Arial", fill:"silver"});
+    let score1 = new PIXI.Text(JSON.stringify(p1.score), {fontSize:50, fill:"silver"});
     score1.x = 20;
     score1.y = sky.height - 60;
 
-    let score2 = new PIXI.Text(JSON.stringify(p2.score), {font:"50px Arial", fill:"silver"});
+    let score2 = new PIXI.Text(JSON.stringify(p2.score), {fontSize:50, fill:"silver"});
     score2.x = sky.width - 50;
     score2.y = sky.height - 60;
 
@@ -464,44 +464,52 @@
           if (-0.5 * Math.PI < p1.painted.rotation && p1.painted.rotation < 0.5 * Math.PI) {
             // low plane left of screen would appear to hit the hut if flying home
             if (p1.painted.y > sky.height - 200) {
-              if (p1.painted.x < sky.width / 2) {
-                p1.painted.flightCoords = [ [homeX, homeY], [0, homeY], [sky.width, homeY], [sky.width / 2, 400] ];
-              } else {
+              if (p1.painted.x < sky.width / 2) {// left side of hut fly over hut
+                p1.painted.flightCoords = [ [homeX, homeY], [0, homeY], [sky.width, homeY], [sky.width / 2, 600] ];
+              } else {// right of hut direct flight home (screen-wrapped)
                 p1.painted.flightCoords = [ [homeX, homeY], [0, homeY], [sky.width, homeY] ];
               }
             } else {// normal height, regular flight path
-              p1.painted.flightCoords = [ [ homeX, homeY], [0, homeY], [sky.width - 50, homeY], [sky.width - 175, sky.height - 75 ], [sky.width - 250, sky.height - 150] ];
+              p1.painted.flightCoords = [ [ homeX, homeY], [0, homeY], [sky.width, homeY]];
             }
           } else {// facing towards home, fly directly
-            if (p1.painted.y < sky.height - 200) {
+            if (p1.painted.y > sky.height - 200) {
               if (p1.painted.x > sky.width / 2) {
-                p1.painted.flightCoords = [ [homeX, homeY], [sky.width / 2, 500] ];
-              } else {
-                p1.painted.flightCoords = [ [homeX, homeY] ];
+                p1.painted.flightCoords = [ [homeX, homeY], [sky.width / 2, sky.height - 300] ];
+              } else {// is left of hut direct line home
+              p1.painted.flightCoords = [ [homeX, homeY] ];
               }
+            } else {// is above hut height direct line home
+              p1.painted.flightCoords = [ [homeX, homeY] ];
             }
           }
-        } else {// p2
+        };
+
+        if (player === p2) {
+          // facing away from home, continue same direction for screen wrap effect
           if (-0.5 * Math.PI < p2.painted.rotation && p2.painted.rotation < 0.5 * Math.PI) {
-            if (p2.painted.y < sky.height - 200) {
-              if (p2.painted.x > sky.width / 2) {
-                p2.painted.flightCoords = [ [homeX, homeY], [sky.width, homeY], [0, homeY], [sky.width / 2, 500] ];
-              } else {
-                p2.painted.flightCoords = [ [homeX, homeY], [sky.width, homeY], [0, homeY] ];
+            // low plane right of screen would appear to hit the hut if flying home (screen wrap)
+            if (p2.painted.y > sky.height - 200) {
+              if (p2.painted.x > sky.width / 2) {// plane is right side of hut fly over hut
+                p2.painted.flightCoords = [ [homeX, homeY], [0, homeY], [sky.width / 2, 600] ];
+              } else {// left of hut direct flight home (wrapped screen)
+                p2.painted.flightCoords = [ [homeX, homeY], [0, homeY] ];
               }
             } else {// normal height, regular flight path
-              p2.painted.flightCoords = [ [ homeX, homeY], [sky.width, homeY], [0, homeY], [25, sky.height - 40], [50, sky.height - 50], [125, sky.height - 50], [175, sky.height - 75 ], [200, sky.height - 100] ];
+              p2.painted.flightCoords = [ [ homeX, homeY], [0, homeY] ];
             }
           } else {// facing towards home, fly directly
-            if (p2.painted.y < sky.height - 200) {
-              if (p2.painted.x < sky.width / 2) {
-                p2.painted.flightCoords = [ [homeX, homeY], [sky.width / 2, 500] ];
-              } else {
-                p2.painted.flightCoords = [ [homeX, homeY] ];
+            if (p2.painted.y > sky.height - 200) {
+              if (p2.painted.x < sky.width / 2) {// left of hut, fly above
+                p2.painted.flightCoords = [ [homeX, homeY], [sky.width / 2, sky.height - 300] ];
+              } else {// is right of hut direct line home
+              p2.painted.flightCoords = [ [homeX, homeY] ];
               }
+            } else {// is above hut height direct line home
+              p2.painted.flightCoords = [ [homeX, homeY] ];
             }
           }
-        }      
+        };    
       })();
       gameScene.removeChild(shotPlane);
       gameScene.addChild(player.painted);
@@ -514,72 +522,7 @@
     if (p2.painted !== undefined) {
       homeFlight(p2);
     }
-
-    // painted, auto flight home
-    homeFlight = function homeFlight(p) {
-      let x1, y1, x2, y2;
-      if (p.painted.flightCoords.length > 0) {
-        getCoords();
-        if (checkCoords() !== true) {
-          movePlane();
-        } else {
-          p.painted.flightCoords.pop();
-          if (p.painted.flightCoords.length > 0) {
-            getCoords();
-            movePlane();
-          }
-        }
-      } else {
-        p.painted.rotation = 0;       
-      }
-      function getCoords() {
-        x1 = p.painted.x, y1 = p.painted.y;
-        x2 = p.painted.flightCoords[p.painted.flightCoords.length-1][0], y2 = p.painted.flightCoords[p.painted.flightCoords.length-1][1];
-      }
-      function checkCoords() {
-        return (x1 === x2 && y1 === y2) ? true : false;
-      }
-      function movePlane() {
-        let dx, dy;
-        if (p === p1 && p1.painted.rotation < 0.5 * Math.PI && p1.painted.rotation > -0.5 * Math.PI ) {
-          dx = x2 - x1;
-          dy = y2 - y1;
-          p.painted.rotation = Math.atan(dy / dx);
-          p.painted.speed = 10;
-          let vx = p.painted.speed * Math.cos(p.painted.rotation);
-          let vy = p.painted.speed * Math.sin(p.painted.rotation);
-          p.painted.x += vx;
-          p.painted.y += vy;
-          if (dx < 0) p.painted.x = x2;
-          if (dy < 0) p.painted.y = y2;
-        }
-        if (p === p1 && ((p1.painted.rotation < - 0.5 * Math.PI) || (p1.painted.rotation > 0.5 * Math.PI))) {
-          dx = x1 - x2;
-          dy = y2 - y1;
-          p.painted.rotation = Math.PI - Math.atan(dy / dx);
-          p.painted.speed = 10;
-          let vx = p.painted.speed * Math.cos(p.painted.rotation);
-          let vy = p.painted.speed * Math.sin(p.painted.rotation);
-          p.painted.x += vx;
-          p.painted.y += vy;
-          if (dx < 0) p.painted.x = x2;
-          if (dy < 0) p.painted.y = y2;
-        }
-
-        // ToDo:
-        /*
-        if (p === p2 && ) {
-
-        } 
-        if (p === p2 && ) {
-
-        }
-        */
-
-      }
-    }
   }
-
   
   /* Function definitions */
   // set up planes
@@ -671,6 +614,84 @@
       gameScene.removeChild(crashedRB);
       airColAnim = false;
     }, 1400);
+  }
+
+  // painted, auto flight home
+  homeFlight = function homeFlight(p) {
+    let x1, y1, x2, y2;
+    if (p.painted.flightCoords.length > 0) {
+      getCoords();
+      if (checkCoords() !== true) {
+        movePlane();
+      } else {
+        p.painted.flightCoords.pop();
+        if (p.painted.flightCoords.length > 0) {
+          getCoords();
+          movePlane();
+        }
+      }
+    } else {
+      p.painted.rotation = 0;       
+    }
+    function getCoords() {
+      x1 = p.painted.x, y1 = p.painted.y;
+      x2 = p.painted.flightCoords[p.painted.flightCoords.length-1][0];
+      y2 = p.painted.flightCoords[p.painted.flightCoords.length-1][1];
+    }
+    function checkCoords() {
+      return (x1 === x2 && y1 === y2) ? true : false;
+    }
+    function movePlane() {
+      let dx, dy;
+      if (p === p1 && p1.painted.rotation < 0.5 * Math.PI && p1.painted.rotation > -0.5 * Math.PI ) {
+        dx = x2 - x1;
+        dy = y2 - y1;
+        p.painted.rotation = Math.PI/2 + Math.atan(dy / dx);
+        p.painted.speed = 10;
+        let vx = p.painted.speed * Math.cos(p.painted.rotation);
+        let vy = p.painted.speed * Math.sin(p.painted.rotation);
+        p.painted.x += vx;
+        p.painted.y += vy;
+        if (dx < 0) p.painted.x = x2;
+        if (dy < 0) p.painted.y = y2;
+      }
+      if (p === p1 && ((p1.painted.rotation < - 0.5 * Math.PI) || (p1.painted.rotation > 0.5 * Math.PI))) {
+        dx = x1 - x2;
+        dy = y2 - y1;
+        p.painted.rotation = Math.PI - Math.atan(dy / dx);
+        p.painted.speed = 10;
+        let vx = p.painted.speed * Math.cos(p.painted.rotation);
+        let vy = p.painted.speed * Math.sin(p.painted.rotation);
+        p.painted.x += vx;
+        p.painted.y += vy;
+        if (dx < 0) p.painted.x = x2;
+        if (dy < 0) p.painted.y = y2;
+      }
+      if (p === p2 && p2.painted.rotation < 0.5 * Math.PI && p2.painted.rotation > -0.5 * Math.PI ) {
+        dx = x1 - x2;
+        dy = y2 - y1;
+        p.painted.rotation = -Math.atan(dy / dx);
+        p.painted.speed = 10;
+        let vx = p.painted.speed * Math.cos(p.painted.rotation);
+        let vy = p.painted.speed * Math.sin(p.painted.rotation);
+        p.painted.x -= vx;
+        p.painted.y -= vy;
+        if (dx < 0) p.painted.x = x2;
+        if (dy < 0) p.painted.y = y2;
+      }
+      if (p === p2 && ((p2.painted.rotation < - 0.5 * Math.PI) || (p2.painted.rotation > 0.5 * Math.PI))) {
+        dx = x2 - x1;
+        dy = y2 - y1;
+        p.painted.rotation = Math.atan(dy / dx) - Math.PI;
+        p.painted.speed = 10;
+        let vx = p.painted.speed * Math.cos(p.painted.rotation);
+        let vy = p.painted.speed * Math.sin(p.painted.rotation);
+        p.painted.x -= vx;
+        p.painted.y -= vy;
+        if (dx < 0) p.painted.x = x2;
+        if (dy < 0) p.painted.y = y2;
+      }
+    }
   }
 
   // key log funcs
