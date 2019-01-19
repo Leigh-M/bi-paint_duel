@@ -35,7 +35,7 @@
   //Add the canvas
   document.body.appendChild(app.view);
 
-  let state, p1, p2, plane, paintBall, animPaintBalls, crash, airCollision, checkPlaneShot, animPaintedPlane, homeFlight, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, keyState, airColAnim;
+  let state, p1, p2, plane, paintBall, animPaintBalls, crash, airCollision, checkPlaneShot, animPaintedPlane, homeFlight, balloon, gameScene, gameOverScene, id, sky, largeCloud1, largeCloud2, flatCloud, flatCloudDistant, hills, nearHill, hut, keyState, airColAnim, rafGrCol, hutWallCol, hutRoofCol, RBGrCol, RBhutWallCol, RBhutRoofCol;
 
   loader
     .add("images/bi-paint-textures.json").load(setup);
@@ -94,15 +94,15 @@
     flatCloudDistant.x = 800;
     flatCloudDistant.y = 580;
 
-    let score1 = new PIXI.Text(JSON.stringify(p1.score), {fontSize:50, fill:"silver"});
-    score1.x = 20;
-    score1.y = sky.height - 60;
+    p1.scoreCounter = new PIXI.Text(JSON.stringify(p1.score), {fontSize:50, fill:"silver"});
+    p1.scoreCounter.x = 20;
+    p1.scoreCounter.y = sky.height - 60;
 
-    let score2 = new PIXI.Text(JSON.stringify(p2.score), {fontSize:50, fill:"silver"});
-    score2.x = sky.width - 50;
-    score2.y = sky.height - 60;
+    p2.scoreCounter = new PIXI.Text(JSON.stringify(p2.score), {fontSize:50, fill:"silver"});
+    p2.scoreCounter.x = sky.width - 50;
+    p2.scoreCounter.y = sky.height - 60;
 
-    gameScene.addChild(flatCloudDistant, hills, flatCloud, nearHill, balloon, hut, p1.plane, p2.plane, largeCloud1, largeCloud2, score1, score2);
+    gameScene.addChild(flatCloudDistant, hills, flatCloud, nearHill, balloon, hut, p1.plane, p2.plane, largeCloud1, largeCloud2, p1.scoreCounter, p2.scoreCounter);
 
     //Set the game state
     state = play;
@@ -116,81 +116,152 @@
   }
   
   function play() {
-    // left, right and sky boundary
-    if (p1.plane.x > sky.width - 40) p1.plane.x = 0;
-    if (p1.plane.x < 0) p1.plane.x = sky.width - 40;
-    if (p1.plane.y < 28) {
-      p1.plane.y = 28; 
-      p1.plane.stall = true;
+    if (p1.plane) {
+      // left, right and sky boundary
+      if (p1.plane.x > sky.width - 40) p1.plane.x = 0;
+      if (p1.plane.x < 0) p1.plane.x = sky.width - 40;
+      if (p1.plane.y < 28) {
+        p1.plane.y = 28; 
+        p1.plane.stall = true;
+      }
+
+      // p1.plane collision logic
+      // ground col
+      if (p1.plane.takeOff && p1.plane.y > sky.height - 28) rafGrCol = true;
+        // hut wall col, 2x rectangles
+        if (
+          !(hut.x + hut.width < p1.plane.x + 20) &&
+          !(p1.plane.x + p1.plane.width < hut.x + 50) &&
+          !(hut.y + hut.height < p1.plane.y) &&
+          !(p1.plane.y + p1.plane.height < hut.y + 88)
+        ) hutWallCol = true;
+
+      // hut roof col, hut roof roughly circular 2x circles
+      hutRoofCol = (() => {
+        let dX = hut.x + 75 - p1.plane.x, dY = hut.y + 70 - p1.plane.y;
+        let distance = Math.sqrt( (dX * dX ) + (dY * dY ) );
+        return distance < ( ((hut.width - 20) / 2) + (p1.plane.height / 2 ) );
+      })();
+
+      // p1.plane ground or hut collision occurred
+      if (rafGrCol || hutWallCol || hutRoofCol) {
+        p2.score += 1;
+        p2.scoreCounter.text = p2.score; 
+        rafGrCol = false, hutWallCol = false, hutRoofCol = false;
+        p1.crashedPlane = new Sprite(id["crashedRAF.png"]);
+        crash(p1);
+        p1.plane = new Sprite(id["RAF_Plane02sized.png"]);
+        plane(p1.plane, 122);
+        gameScene.addChild(p1.plane);
+      }
+
+      // left and right controls
+      if (p1.plane.takeOff) {
+        //z key
+        if(keyState[90]) {
+          p1.plane.rotation -= 1/8;
+          if (p1.plane.rotation < (-2 * Math.PI)) {
+            p1.plane.rotation = 0;
+          }
+        }
+        //x key
+        if(keyState[88]) {
+          p1.plane.rotation += 1/8;
+          if (p1.plane.rotation > 2 * Math.PI) {
+            p1.plane.rotation = 0;
+          }
+        }
+      }
+
+      // p1.plane regular flight
+      if (!p1.plane.stall) {
+        // gravity
+        // plane flying up
+        if ( (p1.plane.rotation < 0 && p1.plane.rotation > -Math.PI)  || (p1.plane.rotation > Math.PI && p1.plane.rotation < 2 * Math.PI) ) {
+        p1.plane.speed -= 0.25 * Math.abs(Math.sin(p1.plane.rotation));
+        }
+        // plane flying down
+        if (p1.plane.speed < 10 && ((-Math.PI > p1.plane.rotation && p1.plane.rotation > -2 * Math.PI) || (p1.plane.rotation > 0 && p1.plane.rotation < Math.PI))) {
+          p1.plane.speed += 0.25 * Math.abs(Math.sin(p1.plane.rotation));
+        }
+
+        // wind resistance
+        if (p1.plane.speed > 2) {
+          p1.plane.speed -= 0.02;
+        }
+
+        p1.plane.vx = p1.plane.speed * Math.cos(p1.plane.rotation);
+        p1.plane.vy = p1.plane.speed * Math.sin(p1.plane.rotation);
+        // correct plane snaps horizontally to 3.125 instead of Pi
+        if (p1.plane.vy < 0 && p1.plane.vy > -0.25) p1.plane.vy = 0;
+        p1.plane.x += p1.plane.vx;
+        p1.plane.y += p1.plane.vy;
+
+        // plane able to take off begin mechanics
+        if (p1.plane.speed > 5) {
+          p1.plane.takeOff = true;
+        }
+
+        // slow plane loss of uplift
+        if (p1.plane.takeOff && p1.plane.speed < 5) {
+          p1.plane.y += 1;
+        }
+
+        // accelerate, q
+        if(keyState[65]) {
+          if (p1.plane.speed < 6) {
+            p1.plane.speed += 0.16;
+          }
+        }
+
+        if (p1.plane.takeOff && p1.plane.speed < 3) {
+          p1.plane.stall = true;
+          keyState[65] = false;
+        }
+      }
+
+      // p1.plane if stalled
+      if (p1.plane.takeOff && p1.plane.stall) {
+        // if stalling facing left continue fall left
+        if ((p1.plane.rotation < -0.5 * Math.PI && p1.plane.rotation > -1.5 * Math.PI) || (p1.plane.rotation > 0.5 * Math.PI && p1.plane.rotation < 1.5 * Math.PI)) {
+          p1.plane.x -= 1;
+        }
+        // if stalling facing right, fall right
+        if ((p1.plane.rotation > -0.5 * Math.PI && p1.plane.rotation < 0) || (p1.plane.rotation > 1.5 * Math.PI && p1.plane.rotation < 2 * Math.PI)) {
+          p1.plane.x += 1;
+        }
+        // gravity
+        p1.plane.y *= 1.0125;
+
+        // if facing downward no stall
+        if ((p1.plane.rotation < -1.4 * Math.PI && p1.plane.rotation > -1.6 * Math.PI) || (p1.plane.rotation > 0.4 * Math.PI && p1.plane.rotation < 0.6 * Math.PI)) {
+          p1.plane.speed = 4;
+          p1.plane.stall = false;
+          keyState[65] = true;
+        }
+      }
+
+      // p1.plane fire paintball
+      if(p1.plane.takeOff && p1.shots.length < 2) {
+        if (keyState[83]) {
+          keyState[83] = false;
+          let shot = (new Sprite(id["rafPaintBall.png"]));
+          p1.shots[p1.shots.length] = shot;
+          paintBall(p1.plane, shot);
+        }
+      }
     }
-    if (p2.plane.x > sky.width - 40) p2.plane.x = 0;
-    if (p2.plane.x < 0) p2.plane.x = sky.width - 40;
-    if (p2.plane.y < 28) {
-      p2.plane.y = 28; 
-      p2.plane.stall = true;
-    }
 
-    if (airColAnim) {
-      if (p1.crashedPlane.y < sky.height - 20) p1.crashedPlane.y += 5;
-      if (p2.crashedPlane.y < sky.height - 20) p2.crashedPlane.y += 5;
-    }
+    if (p2.plane) {
+      // boundaries
+      if (p2.plane.x > sky.width - 40) p2.plane.x = 0;
+      if (p2.plane.x < 0) p2.plane.x = sky.width - 40;
+      if (p2.plane.y < 28) {
+        p2.plane.y = 28; 
+        p2.plane.stall = true;
+      }
 
-    // air collision, 2x rectangles
-    if (
-      !(p1.plane.x + p1.plane.width < p2.plane.x) &&
-      !(p2.plane.x + p2.plane.width < p1.plane.x) &&
-      !(p1.plane.y + p1.plane.height < p2.plane.y) &&
-      !(p2.plane.y + p2.plane.height < p1.plane.y)
-      ) {
-      airColAnim = true;
-      p1.score += 1;
-      p2.score += 1;
-
-      p1.crashedPlane = new Sprite(id["crashedRAF.png"]);
-      p2.crashedPlane = new Sprite(id["crashedRB.png"]);
-      airCollision(p1, p2);
-
-      p1.plane = new Sprite(id["RAF_Plane02sized.png"]);
-      plane(p1.plane, 122);
-      gameScene.addChild(p1.plane);
-
-      p2.plane = new Sprite(id["RedBarren flipped.png"]);
-      plane(p2.plane, sky.width - p2.plane.width - 42);
-      gameScene.addChild(p2.plane);
-    }
-
-    // p1.plane collision logic
-    let rafGrCol = false, hutWallCol = false, hutRoofCol = false;
-    // ground col
-    if (p1.plane.takeOff && p1.plane.y > sky.height - 28) rafGrCol = true;
-
-    // hut wall col, 2x rectangles
-    if (
-      !(hut.x + hut.width < p1.plane.x + 20) &&
-      !(p1.plane.x + p1.plane.width < hut.x + 50) &&
-      !(hut.y + hut.height < p1.plane.y) &&
-      !(p1.plane.y + p1.plane.height < hut.y + 88)
-    ) hutWallCol = true;
-
-    // hut roof col, hut roof roughly circular 2x circles
-    hutRoofCol = (() => {
-      let dX = hut.x + 75 - p1.plane.x, dY = hut.y + 70 - p1.plane.y;
-      let distance = Math.sqrt( (dX * dX ) + (dY * dY ) );
-      return distance < ( ((hut.width - 20) / 2) + (p1.plane.height / 2 ) );
-    })();
-
-    // p1.plane ground or hut collision occurred
-    if (rafGrCol || hutWallCol || hutRoofCol) {
-      p2.score += 1;
-      p1.crashedPlane = new Sprite(id["crashedRAF.png"]);
-      crash(p1);
-      p1.plane = new Sprite(id["RAF_Plane02sized.png"]);
-      plane(p1.plane, 122);
-      gameScene.addChild(p1.plane);
-    }
-    
     // p2.plane collision logic
-    let RBGrCol = false, RBhutWallCol = false, RBhutRoofCol = false;
     // ground coll
     if (p2.plane.takeOff && p2.plane.y > sky.height - 28) RBGrCol = true;
 
@@ -212,29 +283,13 @@
     // p2.plane ground or hut collision occured
     if (RBGrCol || RBhutWallCol || RBhutRoofCol) {
       p1.score += 1;
+      p1.scoreCounter.text = p1.score; 
+      RBGrCol = false, RBhutWallCol = false, RBhutRoofCol = false;
       p2.crashedPlane = new Sprite(id["crashedRB.png"]);
       crash(p2);
       p2.plane = new Sprite(id["RedBarren flipped.png"]);
       plane(p2.plane, sky.width - p2.plane.width - 42);
       gameScene.addChild(p2.plane);
-    }
-
-    // left and right controls
-    if (p1.plane.takeOff) {
-      //z key
-      if(keyState[90]) {
-        p1.plane.rotation -= 1/8;
-        if (p1.plane.rotation < (-2 * Math.PI)) {
-          p1.plane.rotation = 0;
-        }
-      }
-      //x key
-      if(keyState[88]) {
-        p1.plane.rotation += 1/8;
-        if (p1.plane.rotation > 2 * Math.PI) {
-          p1.plane.rotation = 0;
-        }
-      }
     }
 
     if (p2.plane.takeOff) {
@@ -251,74 +306,6 @@
         if (p2.plane.rotation > 2 * Math.PI) {
           p2.plane.rotation = 0;
         }
-      }
-    }
-
-    // p1.plane regular flight
-    if (!p1.plane.stall) {
-      // gravity
-      // plane flying up
-       if ( (p1.plane.rotation < 0 && p1.plane.rotation > -Math.PI)  || (p1.plane.rotation > Math.PI && p1.plane.rotation < 2 * Math.PI) ) {
-      p1.plane.speed -= 0.25 * Math.abs(Math.sin(p1.plane.rotation));
-      }
-      // plane flying down
-      if (p1.plane.speed < 10 && ((-Math.PI > p1.plane.rotation && p1.plane.rotation > -2 * Math.PI) || (p1.plane.rotation > 0 && p1.plane.rotation < Math.PI))) {
-        p1.plane.speed += 0.25 * Math.abs(Math.sin(p1.plane.rotation));
-      }
-
-      // wind resistance
-      if (p1.plane.speed > 2) {
-        p1.plane.speed -= 0.02;
-      }
-
-      p1.plane.vx = p1.plane.speed * Math.cos(p1.plane.rotation);
-      p1.plane.vy = p1.plane.speed * Math.sin(p1.plane.rotation);
-      // correct plane snaps horizontally to 3.125 instead of Pi
-      if (p1.plane.vy < 0 && p1.plane.vy > -0.25) p1.plane.vy = 0;
-      p1.plane.x += p1.plane.vx;
-      p1.plane.y += p1.plane.vy;
-
-      // plane able to take off begin mechanics
-      if (p1.plane.speed > 5) {
-        p1.plane.takeOff = true;
-      }
-
-      // slow plane loss of uplift
-      if (p1.plane.takeOff && p1.plane.speed < 5) {
-        p1.plane.y += 1;
-      }
-
-      // accelerate, q
-      if(keyState[65]) {
-        if (p1.plane.speed < 6) {
-          p1.plane.speed += 0.16;
-        }
-      }
-
-      if (p1.plane.takeOff && p1.plane.speed < 3) {
-        p1.plane.stall = true;
-        keyState[65] = false;
-      }
-    }
-
-    // p1.plane if stalled
-    if (p1.plane.takeOff && p1.plane.stall) {
-      // if stalling facing left continue fall left
-      if ((p1.plane.rotation < -0.5 * Math.PI && p1.plane.rotation > -1.5 * Math.PI) || (p1.plane.rotation > 0.5 * Math.PI && p1.plane.rotation < 1.5 * Math.PI)) {
-        p1.plane.x -= 1;
-      }
-      // if stalling facing right, fall right
-      if ((p1.plane.rotation > -0.5 * Math.PI && p1.plane.rotation < 0) || (p1.plane.rotation > 1.5 * Math.PI && p1.plane.rotation < 2 * Math.PI)) {
-        p1.plane.x += 1;
-      }
-      // gravity
-      p1.plane.y *= 1.0125;
-
-      // if facing downward no stall
-      if ((p1.plane.rotation < -1.4 * Math.PI && p1.plane.rotation > -1.6 * Math.PI) || (p1.plane.rotation > 0.4 * Math.PI && p1.plane.rotation < 0.6 * Math.PI)) {
-        p1.plane.speed = 4;
-        p1.plane.stall = false;
-        keyState[65] = true;
       }
     }
 
@@ -390,16 +377,6 @@
       }
     }
 
-    // p1.plane fire paintball
-    if(p1.plane.takeOff && p1.shots.length < 2) {
-      if (keyState[83]) {
-        keyState[83] = false;
-        let shot = (new Sprite(id["rafPaintBall.png"]));
-        p1.shots[p1.shots.length] = shot;
-        paintBall(p1.plane, shot);
-      }
-    }
-
     // p2.plane fire paintball
     if(p2.plane.takeOff && p2.shots.length < 2) {
       if (keyState[80]) {
@@ -409,110 +386,49 @@
         paintBall(p2.plane, shot);
       }
     }
+  }
 
     if (p1.shots.length > 0) {
       animPaintBalls(p1);
-      checkPlaneShot(p2.plane, p1);
+      checkPlaneShot(p2, p1);
     }
 
     if (p2.shots.length > 0) {
       animPaintBalls(p2);
-      checkPlaneShot(p1.plane, p2);
+      checkPlaneShot(p1, p2);
     }
 
-    checkPlaneShot = function checkPlaneShot(shotPlane, attackingPlayer) {
-      // circle (shot) colliding with rectangle (plane)
-      function rectCircleColl(circle, rect) {
-        let distX = Math.abs( (circle.x - rect.x - (rect.width / 2)) + 40);
-        let distY = Math.abs( (circle.y - rect.y - (rect.height / 2)) + 29);
-        if (distX > (rect.width/ 2 + circle.width / 2)) return false;
-        if (distY > (rect.height/ 2 + circle.width / 2)) return false;
-        if (distX <= (rect.width / 2)) return true;
-        if (distY <= (rect.height / 2)) return true;
-        let dx = distX - rect.width / 2;
-        let dy = distY - rect.width / 2;
-        return (dx * dx + dy * dy <= (circle.width/ 2 * circle.width / 2));
-      }
-      for (let i = 0; i < attackingPlayer.shots.length; i++) {
-        if (rectCircleColl(attackingPlayer.shots[i], shotPlane)) {
-          attackingPlayer.score += 1;
-          // if (attackingPlayer.score > 15) {}
-          gameScene.removeChild(attackingPlayer.shots[i]);
-          attackingPlayer.shots.splice(i, 1);
-          shotPlane.painted = true;
-          animPaintedPlane(shotPlane);
-          break;
-        }
-      }
+    if (airColAnim) {
+      if (p1.crashedPlane.y < sky.height - 20) p1.crashedPlane.y += 5;
+      if (p2.crashedPlane.y < sky.height - 20) p2.crashedPlane.y += 5;
     }
 
-    // change sprite to painted version, set home flight auto pilot coords
-    animPaintedPlane = function animPaintedPlane(shotPlane) {
-      let painted, player;
-      (shotPlane === p1.plane) ? (painted = new Sprite(id["RAFPainted.png"]), player = p1) : (painted = new Sprite(id["RBPainted.png"]), player = p2);
-      painted.x = shotPlane.x;
-      painted.y = shotPlane.y;
-      painted.rotation = shotPlane.rotation;
-      painted.pivot.x = shotPlane.pivot._x;
-      painted.pivot.y = shotPlane.pivot._y;
-      player.painted = painted;
-      // build auto-pilot flight coords to home
-      (function buildFlightPath() {
-        let homeX = (player === p1) ? 40 : sky.width - 43, homeY = sky.height - 30;
-        if (player === p1) {
-          // facing away from home, continue same direction for screen wrap effect
-          if (-0.5 * Math.PI < p1.painted.rotation && p1.painted.rotation < 0.5 * Math.PI) {
-            // low plane left of screen would appear to hit the hut if flying home
-            if (p1.painted.y > sky.height - 200) {
-              if (p1.painted.x < sky.width / 2) {// left side of hut fly over hut
-                p1.painted.flightCoords = [ [homeX, homeY], [0, homeY], [sky.width, homeY], [sky.width / 2, 600] ];
-              } else {// right of hut direct flight home (screen-wrapped)
-                p1.painted.flightCoords = [ [homeX, homeY], [0, homeY], [sky.width, homeY] ];
-              }
-            } else {// normal height, regular flight path
-              p1.painted.flightCoords = [ [ homeX, homeY], [0, homeY], [sky.width, homeY]];
-            }
-          } else {// facing towards home, fly directly
-            if (p1.painted.y > sky.height - 200) {
-              if (p1.painted.x > sky.width / 2) {
-                p1.painted.flightCoords = [ [homeX, homeY], [sky.width / 2, sky.height - 300] ];
-              } else {// is left of hut direct line home
-              p1.painted.flightCoords = [ [homeX, homeY] ];
-              }
-            } else {// is above hut height direct line home
-              p1.painted.flightCoords = [ [homeX, homeY] ];
-            }
-          }
-        };
+    // air collision, 2x rectangles
+    if (p1.plane && p2.plane) {
+      if (
+        !(p1.plane.x + p1.plane.width < p2.plane.x) &&
+        !(p2.plane.x + p2.plane.width < p1.plane.x) &&
+        !(p1.plane.y + p1.plane.height < p2.plane.y) &&
+        !(p2.plane.y + p2.plane.height < p1.plane.y)
+        ) {
+        airColAnim = true;
+        p1.score += 1;
+        p2.score += 1;
+        p1.scoreCounter.text = p1.score; 
+        p2.scoreCounter.text = p2.score; 
 
-        if (player === p2) {
-          // facing away from home, continue same direction for screen wrap effect
-          if (-0.5 * Math.PI < p2.painted.rotation && p2.painted.rotation < 0.5 * Math.PI) {
-            // low plane right of screen would appear to hit the hut if flying home (screen wrap)
-            if (p2.painted.y > sky.height - 200) {
-              if (p2.painted.x > sky.width / 2) {// plane is right side of hut fly over hut
-                p2.painted.flightCoords = [ [homeX, homeY], [0, homeY], [sky.width / 2, 600] ];
-              } else {// left of hut direct flight home (wrapped screen)
-                p2.painted.flightCoords = [ [homeX, homeY], [0, homeY] ];
-              }
-            } else {// normal height, regular flight path
-              p2.painted.flightCoords = [ [ homeX, homeY], [0, homeY] ];
-            }
-          } else {// facing towards home, fly directly
-            if (p2.painted.y > sky.height - 200) {
-              if (p2.painted.x < sky.width / 2) {// left of hut, fly above
-                p2.painted.flightCoords = [ [homeX, homeY], [sky.width / 2, sky.height - 300] ];
-              } else {// is right of hut direct line home
-              p2.painted.flightCoords = [ [homeX, homeY] ];
-              }
-            } else {// is above hut height direct line home
-              p2.painted.flightCoords = [ [homeX, homeY] ];
-            }
-          }
-        };    
-      })();
-      gameScene.removeChild(shotPlane);
-      gameScene.addChild(player.painted);
+        p1.crashedPlane = new Sprite(id["crashedRAF.png"]);
+        p2.crashedPlane = new Sprite(id["crashedRB.png"]);
+        airCollision(p1, p2);
+
+        p1.plane = new Sprite(id["RAF_Plane02sized.png"]);
+        plane(p1.plane, 122);
+        gameScene.addChild(p1.plane);
+
+        p2.plane = new Sprite(id["RedBarren flipped.png"]);
+        plane(p2.plane, sky.width - p2.plane.width - 42);
+        gameScene.addChild(p2.plane);
+      }
     }
 
     if (p1.painted !== undefined) {
@@ -552,6 +468,120 @@
       shot.pivot._y = 10;
     }
     gameScene.addChild(shot);
+  }
+
+  checkPlaneShot = function checkPlaneShot(shotPlayer, attackingPlayer) {
+    // circle (shot) colliding with rectangle (plane)
+    function rectCircleColl(circle, rect) {
+      let distX = Math.abs( (circle.x - rect.x - (rect.width / 2)) + 40);
+      let distY = Math.abs( (circle.y - rect.y - (rect.height / 2)) + 29);
+      if (distX > (rect.width/ 2 + circle.width / 2)) return false;
+      if (distY > (rect.height/ 2 + circle.width / 2)) return false;
+      if (distX <= (rect.width / 2)) return true;
+      if (distY <= (rect.height / 2)) return true;
+      let dx = distX - rect.width / 2;
+      let dy = distY - rect.width / 2;
+      return (dx * dx + dy * dy <= (circle.width/ 2 * circle.width / 2));
+    }
+    for (let i = 0; i < attackingPlayer.shots.length; i++) {
+      if (rectCircleColl(attackingPlayer.shots[i], shotPlayer.plane)) {
+        attackingPlayer.score += 1;
+        attackingPlayer.scoreCounter.text = attackingPlayer.score; 
+        // if (attackingPlayer.score > 15) {}
+        gameScene.removeChild(attackingPlayer.shots[i]);
+        attackingPlayer.shots.splice(i, 1);
+        shotPlayer.plane.painted = true;
+        animPaintedPlane(shotPlayer);
+        break;
+      }
+    }
+  }
+
+  // change sprite to painted version, set home flight auto pilot coords
+  animPaintedPlane = function animPaintedPlane(shotPlayer) {
+    let painted;
+    (shotPlayer === p1) ? (painted = new Sprite(id["RAFPainted.png"])) : (painted = new Sprite(id["RBPainted.png"]));
+    painted.x = shotPlayer.plane.x;
+    painted.y = shotPlayer.plane.y;
+    painted.rotation = shotPlayer.plane.rotation;
+    painted.pivot.x = shotPlayer.plane.pivot._x;
+    painted.pivot.y = shotPlayer.plane.pivot._y;
+    shotPlayer.painted = painted;
+    // build auto-pilot flight coords to home
+    (function buildFlightPath() {
+      let homeX = (shotPlayer === p1) ? 40 : sky.width - 43, homeY = sky.height - 30;
+      if (shotPlayer === p1) {
+        // facing away from home, continue same direction for screen wrap effect
+        if (-0.5 * Math.PI < p1.painted.rotation && p1.painted.rotation < 0.5 * Math.PI) {
+          // low plane left of screen would appear to hit the hut if flying home
+          if (p1.painted.y > sky.height - 200) {
+            if (p1.painted.x < sky.width / 2) {// left side of hut fly over hut
+              p1.painted.flightCoords = [ [homeX, homeY], [0, homeY], [sky.width, homeY], [sky.width / 2, 600] ];
+            } else {// right of hut direct flight home (screen-wrapped)
+              p1.painted.flightCoords = [ [homeX, homeY], [0, homeY], [sky.width, homeY] ];
+            }
+          } else {// normal height, regular flight path
+            p1.painted.flightCoords = [ [ homeX, homeY], [0, homeY], [sky.width, homeY]];
+          }
+        } else {// facing towards home, fly directly
+          if (p1.painted.y > sky.height - 200) {
+            if (p1.painted.x > sky.width / 2) {
+              p1.painted.flightCoords = [ [homeX, homeY], [sky.width / 2, sky.height - 300] ];
+            } else {// is left of hut direct line home
+            p1.painted.flightCoords = [ [homeX, homeY] ];
+            }
+          } else {// is above hut height direct line home
+            p1.painted.flightCoords = [ [homeX, homeY] ];
+          }
+        }
+      };
+
+      if (shotPlayer === p2) {
+        // facing away from home, continue same direction for screen wrap effect
+        if (-0.5 * Math.PI < p2.painted.rotation && p2.painted.rotation < 0.5 * Math.PI) {
+          // low plane right of screen would appear to hit the hut if flying home (screen wrap)
+          if (p2.painted.y > sky.height - 200) {
+            if (p2.painted.x > sky.width / 2) {// plane is right side of hut fly over hut
+              p2.painted.flightCoords = [ [homeX, homeY], [0, homeY], [sky.width / 2, 600] ];
+            } else {// left of hut direct flight home (wrapped screen)
+              p2.painted.flightCoords = [ [homeX, homeY], [0, homeY] ];
+            }
+          } else {// normal height, regular flight path
+            p2.painted.flightCoords = [ [ homeX, homeY], [0, homeY] ];
+          }
+        } else {// facing towards home, fly directly
+          if (p2.painted.y > sky.height - 200) {
+            if (p2.painted.x < sky.width / 2) {// left of hut, fly above
+              p2.painted.flightCoords = [ [homeX, homeY], [sky.width / 2, sky.height - 300] ];
+            } else {// is right of hut direct line home
+            p2.painted.flightCoords = [ [homeX, homeY] ];
+            }
+          } else {// is above hut height direct line home
+            p2.painted.flightCoords = [ [homeX, homeY] ];
+          }
+        }
+      };    
+    })();
+    gameScene.removeChild(shotPlayer.plane);
+    delete(shotPlayer.plane);
+    gameScene.addChild(shotPlayer.painted);
+    setTimeout(() => {
+      gameScene.removeChild(shotPlayer.painted);
+      delete(shotPlayer.painted);
+    }, 3300);
+
+    
+    setTimeout(() => {
+      if(shotPlayer === p1) {
+      p1.plane = new Sprite(id["RAF_Plane02sized.png"]);
+      plane(p1.plane, 122);
+      gameScene.addChild(p1.plane);
+      } else {
+        p2.plane = new Sprite(id["RedBarren flipped.png"]);
+        plane(p2.plane, sky.width - p2.plane.width - 42);
+        gameScene.addChild(p2.plane);
+      }
+    }, 1650);
   }
 
   // animate paint balls
@@ -626,7 +656,7 @@
     }, 1400);
   }
 
-  // painted, auto flight home
+  // painted, autopilot home
   homeFlight = function homeFlight(p) {
     let x1, y1, x2, y2;
     if (p.painted.flightCoords.length > 0) {
